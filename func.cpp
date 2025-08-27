@@ -3,6 +3,29 @@
 /*构建stack 部分 */
 
 /*DPLL 部分 0-18  共21个函数*/
+
+void makecopy(const CNF &S,CNF &newS) 
+//0.将S拷贝到newS (比操作栈要费时费空间，不过直观)
+{
+	newS.num_clau = S.num_clau;
+	newS.num_var = S.num_var;
+	
+	createClause(newS);
+	for(int i = 0;i < newS.num_clau; i++){
+		CLAUSE *node = newS.tail;
+		node->isTrue = S.tail->isTrue;
+		node->num = S.tail->num;
+		node->lit = S.tail->lit;
+		
+		// lit不会删，所以副本地址可以不变，唯一变的就是clause的地址即可 
+		if(i != newS.num_clau - 1){
+			createClause(newS);
+			node->next = newS.tail;	
+		}
+		
+	}
+}
+
 void initCNF(CNF &S, int var)
 //1.初始化 
 {
