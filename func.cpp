@@ -2,10 +2,10 @@
 
 /*构建stack 部分 */
 
-/*DPLL 部分 0-18  共21个函数*/
+/*DPLL 部分 1-24  共22个关键函数函数*/
 
 void makecopy(const CNF &S,CNF &newS) 
-//0.将S拷贝到newS (比操作栈要费时费空间，不过直观)
+//1.将S拷贝到newS (比操作栈要费时费空间，不过直观)
 {
 	newS.num_clau = S.num_clau;
 	newS.num_var = S.num_var;
@@ -27,7 +27,7 @@ void makecopy(const CNF &S,CNF &newS)
 }
 
 void initCNF(CNF &S, int var)
-//1.初始化 
+//2.初始化 
 {
 	S.num_clau = 0;
 	S.num_var = var;
@@ -36,7 +36,7 @@ void initCNF(CNF &S, int var)
 }
 
 void clearCNF(CNF &S, stack <INFO_C> &op_clau,LITSHEET* ans)
-//2.清除CNF并释放之前的内存	;   
+//3.清除CNF并释放之前的内存	;   
 {
 	while(!op_clau.empty()){
 		restore_cl(1, op_clau, S);
@@ -72,7 +72,7 @@ void clearCNF(CNF &S, stack <INFO_C> &op_clau,LITSHEET* ans)
 }
 
 void createClause(CNF &S)
-//3.	创建子句
+//4.	创建子句
 {
     CLAUSE *newClause = (CLAUSE *)malloc(sizeof(CLAUSE));
     newClause->lit = NULL;
@@ -90,16 +90,17 @@ void createClause(CNF &S)
 }
 
 bool buildCNF(CNF &S, int num_clau, FILE *fp, LITSHEET* ans)
-//4. 构建CNF,并读入数据
+//5. 构建CNF,并读入数据
 {
 	if(S.head != NULL) return false;
 
     for(int i = 0;i < num_clau;i++) {
         int a;
+        bool flag = false;
         createClause(S);
 
         while((fscanf(fp, "%d", &a)) != EOF && a != 0) {
-
+			flag = true;
             LITERAL *newLiteral = (LITERAL *)malloc(sizeof(LITERAL));
             newLiteral->value = a; // 设置文字的值
             newLiteral->next = NULL; // 初始化后指针
@@ -116,13 +117,15 @@ bool buildCNF(CNF &S, int num_clau, FILE *fp, LITSHEET* ans)
 
 			buildLitsheet(ans, S.tail, a);
         }
+        if(!flag)	return false;
 
     }
+    
     return true;
 }
 
 void buildLitsheet(LITSHEET* ans, CLAUSE *node, int value)
-//5.	将每个文字所出现的子句标联系上 
+//6.	将每个文字所出现的子句标联系上 
 {
 	int index = abs(value);
 	INFO_L *lit = (INFO_L *)malloc (sizeof(INFO_L));
@@ -149,7 +152,7 @@ void buildLitsheet(LITSHEET* ans, CLAUSE *node, int value)
 }
 
 LITSHEET* CNFparser(CNF &S, char file[], LITSHEET* ans)
-//6. 解析CNF文件
+//7. 解析CNF文件
 {
     FILE *fp;
     char c; int t;
@@ -222,7 +225,7 @@ LITSHEET* CNFparser(CNF &S, char file[], LITSHEET* ans)
 }
 
 void showCNF(CNF &S)
-//7. 显示CNF
+//8. 显示CNF
 {
     printf("\nCNF with %d clauses and %d variables:\n", S.num_clau, S.num_var);
     CLAUSE *curr = S.head;
@@ -242,7 +245,7 @@ void showCNF(CNF &S)
 }
 
 void showCNF(CNF &S,FILE *test)
-//8
+//9
 {
     fprintf(test,"\nCNF with %d clauses and %d variables:\n", S.num_clau, S.num_var);
     CLAUSE *curr = S.head;
@@ -262,7 +265,7 @@ void showCNF(CNF &S,FILE *test)
 }
 
 void showLitsheet(LITSHEET* ans, int range)
-//9
+//10
 {
 	int cnt;
 	for(int i = 1;i <= range; i++){
@@ -283,7 +286,7 @@ void showLitsheet(LITSHEET* ans, int range)
 }
 
 void showClause(CLAUSE *head)
-//10显示某一子句 
+//11显示某一子句 
 {
 	CLAUSE *node = head;
 	if(!node)	return;
@@ -299,21 +302,21 @@ void showClause(CLAUSE *head)
 	printf("\n");
 }
 
-bool isUnitClause(CLAUSE *clause)
-//11. 判断是否为单子句
-{
-    if (clause == NULL) {
-        return false; // 空子句不是单子句
-    }
-    return clause->num == 1;
-}
+//bool isUnitClause(CLAUSE *clause)
+//// 判断是否为单子句
+//{
+//    if (clause == NULL|| clause->num != 1) {
+//        return false; // 空子句不是单子句
+//    }
+//    return true;
+//}
 
 CLAUSE *existUnitClause(CLAUSE *head)
 //12. 在子句链表中查找第一个单子句
 {
     CLAUSE *current = head;
     while (current != NULL) {
-        if (isUnitClause(current)) {
+        if (current->num == 1) {
             return current; 
         }
         current = current->next;
@@ -392,10 +395,19 @@ int deleteClause(stack <INFO_C> &op_clau, CNF &S, LITSHEET* ans, int backtrace[]
 	int cnt = 0, value = 0;
 	
 	while(node != NULL){
-		// 找到并删除单子句 
+		// 找到并删除单子句
+		
+		if(node->isTrue == true){
+			node = existUnitClause(node->next);
+			continue;
+		}	 
 		
 		node->isTrue = true; 
 		value = deleteOneClause(node, op_clau, S,ans);
+		
+		/*printf("delete single clause with %d\n",value);
+		showCNF(S); //每删一个单子句 */
+		
 		if(!value)		return 0; 
 		
 		cnt ++;
@@ -409,6 +421,8 @@ int deleteClause(stack <INFO_C> &op_clau, CNF &S, LITSHEET* ans, int backtrace[]
 		
 		// 化简CNF,并记录删除真子句数		
 		cnt += deleteLit(op_clau, S, value,ans/*, num_TrueClaus*//*,test*/); 
+		
+		/*showCNF(S); //每删一个文字*/
 				
 		node = existUnitClause(node->next);			// 记住是Next,不然会死循环 
 		
@@ -461,7 +475,9 @@ int deleteLit( stack <INFO_C> &op_clau, CNF &S, int value, LITSHEET* ans/*,FILE 
 			pos = pos->next;
 		}				
 	}
-
+	/*
+printf("delete lit %d\n",value); 
+showCNF(S); //每删一个文字*/
 	return cnt;
 }
 
@@ -548,7 +564,7 @@ int choose_lit(CLAUSE *head, LITSHEET* ans)
 }
 
 bool DPLL( stack <INFO_C> &op_clau, CNF &S, LITSHEET* ans/*, FILE *test*/)
-//21.
+//21.	CORE
 {
 	int backtrace[MAX_BACK] = {0}; 			//back【0】为个数
  	int cntCLAU = 0 ;
@@ -569,6 +585,7 @@ bool DPLL( stack <INFO_C> &op_clau, CNF &S, LITSHEET* ans/*, FILE *test*/)
  	// 1.成功解出 
 	if(S.num_clau == 0 || S.head == NULL )	return true;
 	// 2.出现矛盾 
+
 	else if(existEmptyClause(S.head)) {
 
 		restore_cl(cntCLAU, op_clau, S);
@@ -580,6 +597,7 @@ bool DPLL( stack <INFO_C> &op_clau, CNF &S, LITSHEET* ans/*, FILE *test*/)
 	// 3.选取一个变量赋值 
 	int chosen = choose_lit(S.head,ans), index = abs(chosen);
 	if(!index)	return false;
+	/*printf("choose %d as a break\n",chosen);*/
 
 	ans[index].ans = (chosen > 0) ? 1:2;
 	ans[0].ans = chosen;

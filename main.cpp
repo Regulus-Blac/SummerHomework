@@ -67,12 +67,12 @@ int main()
                     printf("Failed to parse CNF.\n");
                     
 				Sleep(500);		//¼ä¸ô0.5s 
-				printf("\nSave as .res~~~\n");
+				printf("\nTry to Save as .res~~~\n");
 				
 				if(saveOutput(ans,num_var,file,used_time))	printf("RES file has been saved !\n");
-				else										printf("ERROR!File NOT be saved\n");
+				else										printf("ERROR!File NOT be saved\n\n");
 				
-				printf("start delete and init ...\n");
+				printf("\nstart delete and init ...\nsuccess!\n\n");
 				
 				clearCNF(S, op_clau, ans) ;
 				for(int i = 0;i <= num_var; i++)	ans[i].ans = 0; 

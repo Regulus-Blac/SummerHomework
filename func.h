@@ -55,22 +55,21 @@ typedef struct {
 
 
 
+/*Part DPLL*/
 
-
-
+void makecopy(const CNF &S,CNF &newS); 
 void initCNF(CNF &S, int var); 
 void clearCNF(CNF &S, stack <INFO_C> &op_clau,LITSHEET* ans);
 void createClause(CNF &S);
 bool buildCNF(CNF &S, int num_clau, FILE *fp, LITSHEET* ans);
-void buildLitsheet(LITSHEET* ans, CLAUSE *node, int value);
 
+void buildLitsheet(LITSHEET* ans, CLAUSE *node, int value);
 LITSHEET* CNFparser(CNF &S, char file[],LITSHEET* ans);
 void showCNF(CNF &S);
 void showCNF(CNF &S,FILE *test);
 void showLitsheet(LITSHEET* ans, int range);
-void showClause(CLAUSE *head);
 
-bool isUnitClause(CLAUSE *clause);
+void showClause(CLAUSE *head);
 CLAUSE *existUnitClause(CLAUSE *head);
 bool existEmptyClause(CLAUSE *head); 
 CLAUSE *locatePre(CLAUSE *node,CLAUSE *head); 
@@ -86,10 +85,6 @@ bool DPLL(stack <INFO_C> &op_clau, CNF &S, LITSHEET* ans/*,FILE *test*/);
 void check(LITSHEET* ans, int cnt);
 void check(FILE *test,LITSHEET* ans,int cnt);
 status saveOutput(LITSHEET* ans, int cnt, char file[], double used_time);
-    // 假设loadClause函数的实现是将当前子句添加到CNF中
-    // 这里需要根据具体的逻辑来实现
-    // 例如，可能需要将当前子句从输入中读取并添加到CNF中
-    // 但由于没有提供具体的实现细节，这里仅作为占位符
     
     
     
