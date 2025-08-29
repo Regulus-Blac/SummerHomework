@@ -9,6 +9,7 @@ void makecopy(const CNF &S,CNF &newS)
 {
 	newS.num_clau = S.num_clau;
 	newS.num_var = S.num_var;
+	newS.exist_emptyclause = S.exist_emptyclause;
 	
 	createClause(newS);
 	for(int i = 0;i < newS.num_clau; i++){
@@ -33,6 +34,7 @@ void initCNF(CNF &S, int var)
 	S.num_var = var;
 	S.head = NULL;
 	S.tail = NULL;
+	S.exist_emptyclause = false;
 }
 
 void clearCNF(CNF &S, stack <INFO_C> &op_clau,LITSHEET* ans)
@@ -63,6 +65,7 @@ void clearCNF(CNF &S, stack <INFO_C> &op_clau,LITSHEET* ans)
     S.tail = NULL;
     S.num_clau = 0;
     S.num_var = 0;
+    S.exist_emptyclause = false;
     
     for(int i = 0;i <= sizeof(ans)/sizeof(LITSHEET); i++){
 		ans[i].ans = 0;
@@ -117,7 +120,11 @@ bool buildCNF(CNF &S, int num_clau, FILE *fp, LITSHEET* ans)
 
 			buildLitsheet(ans, S.tail, a);
         }
-        if(!flag)	return false;
+        
+        if(!flag){
+        	if(a == 0)	S.exist_emptyclause = true;				//	出现空字句
+        	return false;								 		//	或文件有问题 
+		}	
 
     }
     
@@ -212,7 +219,7 @@ LITSHEET* CNFparser(CNF &S, char file[], LITSHEET* ans)
 // 写入CNF
 
     if(!buildCNF(S, S.num_clau, fp, ans)) {
-        printf("Error: CNF already exists.\n");
+        printf("Error: CNF's building fail.\n");
         fclose(fp);
         free(ans);
         return NULL; 
@@ -389,7 +396,8 @@ int deleteOneClause(CLAUSE *Node, stack <INFO_C> &op_clau, CNF &S, LITSHEET* ans
 int deleteClause(stack <INFO_C> &op_clau, CNF &S, LITSHEET* ans, int backtrace[]/*,FILE *test*/)
 //16. 删除所有单子句，并对CNF进行化简；记录操作次数,将单子句中变量值记录 
 {
-	if(S.num_clau == 0)		return 0; 
+	if(S.num_clau == 0 || !S.head)		return 0; 
+	if(S.exist_emptyclause)	return 0;
 	
 	CLAUSE *node = existUnitClause(S.head);
 	int cnt = 0, value = 0;
@@ -422,7 +430,9 @@ int deleteClause(stack <INFO_C> &op_clau, CNF &S, LITSHEET* ans, int backtrace[]
 		// 化简CNF,并记录删除真子句数		
 		cnt += deleteLit(op_clau, S, value,ans/*, num_TrueClaus*//*,test*/); 
 		
-		/*showCNF(S); //每删一个文字*/
+		if(S.exist_emptyclause)	return cnt;
+		
+	/*	showCNF(S); //每删一个文字*/
 				
 		node = existUnitClause(node->next);			// 记住是Next,不然会死循环 
 		
@@ -434,10 +444,11 @@ int deleteClause(stack <INFO_C> &op_clau, CNF &S, LITSHEET* ans, int backtrace[]
 int deleteLit( stack <INFO_C> &op_clau, CNF &S, int value, LITSHEET* ans/*,FILE *test*/)
 //17.	删除子句中的文字，同时也会删除真子句并记录真子句次数 
 {
-	if(!S.num_clau || !S.head)	return 0;			//	S已经为空 
+	if(!S.num_clau || !S.head )	return 0;			//	S已经为空 
 	
 	int cnt = 0, index = abs(value);		//	直接删除包含value的子句，删除-value的文字 
 	INFO_L * pos = ans[index].pos;	INFO_L *nag = ans[index].nag;
+	bool flag = false;
 	
 	if(value > 0){	
 		while(pos){
@@ -453,7 +464,10 @@ int deleteLit( stack <INFO_C> &op_clau, CNF &S, int value, LITSHEET* ans/*,FILE 
 		}
 		
 		while(nag){		
-			nag->clause->num --;
+			nag->clause->num --;			
+			
+			if(nag->clause->num == 0 && nag->clause->isTrue == false)	flag = true;
+			
 			nag = nag->next;
 		}
 		
@@ -465,18 +479,23 @@ int deleteLit( stack <INFO_C> &op_clau, CNF &S, int value, LITSHEET* ans/*,FILE 
 				cnt ++;
 			}
 			
-			nag->clause->num --;
+			nag->clause->num --;			
 				
 			nag = nag->next;
 		}
 		
 		while(pos){		
 			pos->clause->num --;
+						
+			if(pos->clause->num == 0 && pos->clause->isTrue == false)	flag = true;
+						
 			pos = pos->next;
 		}				
 	}
-	/*
-printf("delete lit %d\n",value); 
+	
+	if(flag)	S.exist_emptyclause = true;
+	
+/*printf("delete lit %d\n",value); 
 showCNF(S); //每删一个文字*/
 	return cnt;
 }
@@ -575,6 +594,15 @@ bool DPLL( stack <INFO_C> &op_clau, CNF &S, LITSHEET* ans/*, FILE *test*/)
  		chosenlit = ans[0].ans;
  		cntCLAU += deleteLit(op_clau, S, chosenlit, ans/*,test*/);
  		
+ 		if(S.exist_emptyclause) {			//剪枝 
+ 		
+			restore_cl(cntCLAU, op_clau, S);
+			restore_lit(backtrace, ans);
+			S.exist_emptyclause = false;
+			
+			return false; 			
+		 }
+		 
  		backtrace[0] ++;
  		backtrace[1] = chosenlit;
 	}
@@ -586,10 +614,11 @@ bool DPLL( stack <INFO_C> &op_clau, CNF &S, LITSHEET* ans/*, FILE *test*/)
 	if(S.num_clau == 0 || S.head == NULL )	return true;
 	// 2.出现矛盾 
 
-	else if(existEmptyClause(S.head)) {
+	else if(S.exist_emptyclause) {
 
 		restore_cl(cntCLAU, op_clau, S);
 		restore_lit(backtrace, ans);
+		S.exist_emptyclause = false;
 
 		return false;		
 	}	
