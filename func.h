@@ -58,7 +58,7 @@ typedef struct {
 
 /*Part DPLL*/
 
-void makecopy(const CNF &S,CNF &newS); 
+void makecopy(CNF &newS,const CNF &S); 
 void initCNF(CNF &S, int var); 
 void clearCNF(CNF &S, stack <INFO_C> &op_clau,LITSHEET* ans);
 void createClause(CNF &S);
@@ -86,22 +86,21 @@ bool DPLL(stack <INFO_C> &op_clau, CNF &S, LITSHEET* ans/*,FILE *test*/);
 void check(LITSHEET* ans, int cnt);
 void check(FILE *test,LITSHEET* ans,int cnt);
 status saveOutput(LITSHEET* ans, int cnt, char file[], double used_time);
+void recover_lit(int back[], LITSHEET* ans);
+void recover_cl(int num, stack <INFO_C> &op_clau, CNF &S);     
+
+/*Part Sudoku*/
     
-    
-    
-//void recoverCNF(CNF &S, stack <INFO_C> &op_clau,int ans[]);   
-//bool fundConsCNF(CNF &S);
-//bool percentConsCNF(CNF &S);
-//
-//int ijk_cnf(int ijk);
-//int cnf_ijk(int cnf);
-//int randomNum(int code);
-//
-//CLAUSE *addUnitClause(CNF &S, int value);
-//bool deleteS_tail(CNF &S, CLAUSE *base);
-//
-//bool DFS_board(/*FILE *test,*/int row, int col, int cnt,  stack <INFO_C> &op_clau, CNF &S, int board[N][N],int ans[]);
-//bool generate(/*FILE *test,*/ stack <INFO_C> &op_clau, CNF &S, int board[N][N], int ans[]);
-//
-//
-//void showBoard(int board[N][N]);
+bool fundConsCNF(CNF &S, LITSHEET *ans);
+bool percentConsCNF(CNF &S, LITSHEET *ans);
+int ijk_cnf(int ijk);
+int cnf_ijk(int cnf);
+int randomNum(int code);
+
+void addUnitClause(CNF &S, int value,LITSHEET * ans);
+bool deleteS_head(CNF &S,LITSHEET * ans);
+bool DFS_board(/*FILE *test,*/int row, int col, int cnt,  stack <INFO_C> &op_clau, CNF &S, int board[N][N],LITSHEET* ans);
+bool generate(/*FILE *test,*/ stack <INFO_C> &op_clau, CNF &S, int board[N][N], LITSHEET* ans);
+
+
+void showBoard(int board[N][N]);

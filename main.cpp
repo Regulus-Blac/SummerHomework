@@ -24,9 +24,9 @@ int main()
 
     while(1){
 
-    	
         switch (choice) {
-            case 1:
+        	
+        	case 1:{
             	printf("please input your filename(NOT need type .cnf):\n");
             	scanf("%s",file);
             	char inFile[FILE_MAX];
@@ -40,7 +40,7 @@ int main()
 
 
                 if ( num_var ) {
-//					showCNF(S);
+					showCNF(S);
 
 					start = clock();
 					
@@ -72,45 +72,50 @@ int main()
 				if(saveOutput(ans,num_var,file,used_time))	printf("RES file has been saved !\n");
 				else										printf("ERROR!File NOT be saved\n\n");
 				
+
 				printf("\nstart delete and init ...\nsuccess!\n\n");
 				
 				clearCNF(S, op_clau, ans) ;
 				for(int i = 0;i <= num_var; i++)	ans[i].ans = 0; 
 	
-                break;
+                break;            	
+			}
                 
-            case 2:
-//            	int mode;
-//            	for(int i = 0;i <= SUDOKU_VAR;i++)	ans[i] = 0;
-//            	printf("Choose your game:1->SUDOKU 2->%%-SUDOKU 0->QUIT\n");
-//            	scanf("%d",&mode);
-//            	
-//            	if(!mode)	break;
-//            	
-//				fundConsCNF(sudoku);
-//				if(mode == 2)	percentConsCNF(sudoku);
-//				
-//				printf("sudoku num_clau = %d \n",sudoku.num_clau);
-//
-//				generate(/*test,*/ op_clau, sudoku, board, ans);
-//				clearCNF(sudoku, op_clau, ans);
+            case 2:{
+            	int mode;
+            	for(int i = 0;i <= SUDOKU_VAR;i++)	ans[i].ans = 0;
+            	printf("Choose your game:1->SUDOKU 2->%%-SUDOKU 0->QUIT\n");
+            	scanf("%d",&mode);
+            	
+            	if(!mode)	break;
+				fundConsCNF(sudoku,ans);
+				if(mode == 2)	percentConsCNF(sudoku,ans);
 				
-				break;
+				printf("sudoku num_clau = %d \n",sudoku.num_clau);
+
+				generate(/*test,*/ op_clau, sudoku, board, ans);
+				clearCNF(sudoku, op_clau, ans);
 				
-            case 3:
+				break;            	
+			}
+
+				
+            case 3:{
                 printf("Exiting...\n");
                 free(ans);
-                return 0;
-            default:
+                return 0;           	
+			}
+
+            default:{
                 printf("Invalid choice. Please try again.\n");
                 break;
+			}
+
         }
         
         printf("What's your next order?\n");
         scanf("%d", &choice);
     }
-
-
 
     return 0;
 }
