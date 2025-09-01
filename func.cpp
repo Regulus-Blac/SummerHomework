@@ -415,25 +415,30 @@ int deleteClause(stack <INFO_C> &op_clau, CNF &S, LITSHEET* ans, int backtrace[]
 		
 		/*printf("delete single clause with %d\n",value);
 		showCNF(S); //每删一个单子句 */
-		
-		if(!value)		return 0; 
-		
-		cnt ++;
+			
 		// 保存记录 
 		if(value > 0){
 			ans[value].ans = 1;
 		}else if(value < 0){
 			ans[-value].ans = 2;
+		}else{
+			printf("ERROR self is empty ,cannot be deleted\n");
+			return 0;			
 		}	
+		
+		cnt ++;
 		backtrace[++backtrace[0]] = value;
 		
 		// 化简CNF,并记录删除真子句数		
-		cnt += deleteLit(op_clau, S, value,ans/*, num_TrueClaus*//*,test*/); 
+		cnt += deleteLit(op_clau, S, value,ans/*, num_TrueClaus*//*,test*/);
 		
-		if(S.exist_emptyclause)	return cnt;
+		/*showCNF(S); //每删完一个文字*/
 		
-	/*	showCNF(S); //每删一个文字*/
-				
+		if(S.exist_emptyclause == true){
+			/*printf("已经无法成立，删除单子句就此中断\n");*/
+			return cnt;
+		}	
+
 		node = existUnitClause(node->next);			// 记住是Next,不然会死循环 
 		
 	}
@@ -465,7 +470,7 @@ int deleteLit( stack <INFO_C> &op_clau, CNF &S, int value, LITSHEET* ans/*,FILE 
 		
 		while(nag){		
 			nag->clause->num --;			
-			
+			// 删除负文字时，更新判定情况 
 			if(nag->clause->num == 0 && nag->clause->isTrue == false)	flag = true;
 			
 			nag = nag->next;
@@ -493,10 +498,15 @@ int deleteLit( stack <INFO_C> &op_clau, CNF &S, int value, LITSHEET* ans/*,FILE 
 		}				
 	}
 	
-	if(flag)	S.exist_emptyclause = true;
+	if(flag == true){			//	存在空子句 
+		S.exist_emptyclause = true;
+		/* printf("value = %d empty now! S.exist_emptyclause = %d\n",value,S.exist_emptyclause);*/
+		
+	}	
 	
 /*printf("delete lit %d\n",value); 
-showCNF(S); //每删一个文字*/
+showCNF(S); //每删一个文字
+*/
 	return cnt;
 }
 
@@ -532,6 +542,8 @@ status restore_cl(int num, stack <INFO_C> &op_clau, CNF &S)
 
 		S.num_clau ++;
 		
+		if(S.exist_emptyclause == true)	S.exist_emptyclause = false;
+		 
 	}
 
 	return TRUE;
@@ -563,9 +575,19 @@ status restore_lit(int back[], LITSHEET* ans)
 }
 
 int choose_lit(CLAUSE *head, LITSHEET* ans)
-//20.	选择第一个还是false的子句的第一个有效文字赋值 
+//20.	选择单子句或者第一个还是false的子句的第一个有效文字赋值 
 {
-	CLAUSE *node = head;
+	CLAUSE *unit = existUnitClause(head);
+	if(unit != NULL && unit->isTrue == false){
+		LITERAL *lit = unit->lit;
+		while(lit){
+			int i = lit->value;
+			if(ans[abs(i)].ans == 0)		return i;
+			lit = lit->next;
+		}		
+	}
+	//	如果没有单子句了 
+	CLAUSE *node = head;	
 	while(node){
 		if(node->isTrue == false) {
 			LITERAL *lit = node->lit;
@@ -593,18 +615,16 @@ bool DPLL( stack <INFO_C> &op_clau, CNF &S, LITSHEET* ans/*, FILE *test*/)
  	if(ans[0].ans != 0) {
  		chosenlit = ans[0].ans;
  		cntCLAU += deleteLit(op_clau, S, chosenlit, ans/*,test*/);
- 		
- 		if(S.exist_emptyclause) {			//剪枝 
- 		
-			restore_cl(cntCLAU, op_clau, S);
-			restore_lit(backtrace, ans);
-			S.exist_emptyclause = false;
-			
-			return false; 			
-		 }
-		 
+ 			 
  		backtrace[0] ++;
  		backtrace[1] = chosenlit;
+ 		
+ 		if(S.exist_emptyclause) {			//剪枝（不要放在更新backtrace数组之前！改了2天... 
+ 		
+			restore_cl(cntCLAU, op_clau, S);
+			restore_lit(backtrace, ans);	
+			return false; 			
+		 } 		
 	}
 	// 删除所有单子句，删除包含该文字的子句，删去反文字,并记录操作次数
 
@@ -618,14 +638,13 @@ bool DPLL( stack <INFO_C> &op_clau, CNF &S, LITSHEET* ans/*, FILE *test*/)
 
 		restore_cl(cntCLAU, op_clau, S);
 		restore_lit(backtrace, ans);
-		S.exist_emptyclause = false;
-
 		return false;		
 	}	
 	
 	// 3.选取一个变量赋值 
 	int chosen = choose_lit(S.head,ans), index = abs(chosen);
 	if(!index)	return false;
+	
 	/*printf("choose %d as a break\n",chosen);*/
 
 	ans[index].ans = (chosen > 0) ? 1:2;

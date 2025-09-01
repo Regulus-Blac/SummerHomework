@@ -33,9 +33,9 @@ typedef struct clause {
 typedef struct cnf {
     int num_clau; // 子句数量
     int num_var;  // 变量数量
+    bool exist_emptyclause;     
     CLAUSE *head; // 指向子句链表的头
     CLAUSE *tail; // 指向子句链表的尾
-    bool exist_emptyclause; 
 } CNF;
 
 typedef struct info_clau{

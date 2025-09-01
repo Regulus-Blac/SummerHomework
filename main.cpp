@@ -56,7 +56,7 @@ int main()
 						fclose(test);*/
 						ans[0].ans = 1;
 					}else{
-						printf("ERROR! no solution\n");
+						printf("\nERROR! no solution\n");
 						ans[0].ans = 0;
 					}
 
