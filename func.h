@@ -10,7 +10,7 @@ using namespace std;
 #define INFEASIBLE -1
 #define TRUE 1
 #define FALSE 0
-#define MAX_VAR 5210
+#define MAX_VAR 3000
 #define FILE_MAX 30
 #define SUDOKU_VAR 729
 #define N 9

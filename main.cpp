@@ -10,7 +10,7 @@ int main()
 	stack <INFO_C> op_clau;
 	CNF S;  initCNF(S, 0);
 	CNF sudoku;	initCNF(sudoku, SUDOKU_VAR);
-	LITSHEET *ans = (LITSHEET *)malloc(sizeof(LITSHEET) * (1 + SUDOKU_VAR));
+	LITSHEET *ans = (LITSHEET *)malloc(sizeof(LITSHEET) * (1 + MAX_VAR));
 	
     char file[FILE_MAX];
     int board[N][N] = {0};
@@ -35,7 +35,7 @@ int main()
             	
             	ans = CNFparser(S,inFile,ans);
             	if(!ans)	break;
-            	showLitsheet(ans, 10); 
+
             	num_var = S.num_var;
 
 
@@ -82,15 +82,17 @@ int main()
 			}
                 
             case 2:{
-            	int mode;char files[20] = "CNF_output.txt";
+            	int mode;char files[20] = "CNF_output.cnf";
             	printf("Choose your game:1->SUDOKU 2->%%-SUDOKU 0->QUIT\n");
             	scanf("%d",&mode);
             	
             	if(!mode)	break;
 				fundConsCNF(sudoku,ans);
 				if(mode == 2)	percentConsCNF(sudoku,ans);
+				
 				Output_CNF(sudoku);
 				CNFparser(S,files,ans);
+				
 				printf("sudoku num_clau = %d \n",sudoku.num_clau);
 				
 				generate(/*test,*/ op_clau, sudoku, board, ans);

@@ -195,14 +195,14 @@ LITSHEET* CNFparser(CNF &S, char file[], LITSHEET* ans)
 // 调整并初始化ans数组
 	if(S.num_var > SUDOKU_VAR) {
 		
-		LITSHEET *temp = (LITSHEET *)realloc(ans,(S.num_var + 1)* sizeof(LITSHEET) );
-		
-		if(temp == NULL){
-			printf("realloc ERROR!");
-			free(ans);
-			return NULL;
-		}
-		ans = temp;
+//		LITSHEET *temp = (LITSHEET *)realloc(ans,(S.num_var + 1)* sizeof(LITSHEET) );
+//		
+//		if(temp == NULL){
+//			printf("realloc ERROR!");
+//			free(ans);
+//			return NULL;
+//		}
+//		ans = temp;
 		for(int i = 0;i <= S.num_var; i++){
 			ans[i].ans = 0;
 			ans[i].pos = NULL;
@@ -274,7 +274,7 @@ void showCNF(CNF &S,FILE *test)
 }
 
 void showLitsheet(LITSHEET* ans, int range)
-//10
+//10.展示文字出现在自己的次数 ，不包含0 
 {
 	int cnt;
 	for(int i = 1;i <= range; i++){
@@ -284,13 +284,14 @@ void showLitsheet(LITSHEET* ans, int range)
 			cnt ++;
 			pos = pos->next;
 		}
-		printf("var %d occur in %d clause\n",i,cnt);
+		if(cnt)		printf("var %d occur in %d clause\n",i,cnt);
+		
 		cnt = 0;
 		while(nag){
 			cnt ++;
 			nag = nag->next;
 		}		
-		printf("var %d occur in %d clause\n",-i,cnt);
+		if(cnt)		printf("var %d occur in %d clause\n",-i,cnt);
 	}
 }
 
@@ -491,74 +492,6 @@ int deleteClause(stack <INFO_C> &op_clau, CNF &S, LITSHEET* ans, int backtrace[]
 	return cnt;
 }
 
-//int deleteLit( stack <INFO_C> &op_clau, CNF &S, int value, LITSHEET* ans/*,FILE *test*/)
-////17.	删除子句中的文字，同时也会删除真子句并记录真子句次数 
-//{
-//	if(!S.num_clau || !S.head )	return 0;			//	S已经为空 
-//	
-//	int cnt = 0, index = abs(value);		//	直接删除包含value的子句，删除-value的文字 
-//	INFO_L * pos = ans[index].pos;	INFO_L *nag = ans[index].nag;
-//	bool flag = false;
-//	
-//	if(value > 0){	
-//		while(pos && pos->clause){
-//
-//			if(pos->clause->isTrue == false) {
-//				pos->clause->isTrue = true;
-//				deleteOneClause(pos->clause, op_clau,S,ans);
-//				cnt ++;
-//			}
-//			
-//			pos->clause->num --;
-//				
-//			pos = pos->next;
-//		}
-//		
-//		while(nag && nag->clause){	
-//			
-//			nag->clause->num --;			
-//			// 删除负文字时，更新判定情况 
-//			if(nag->clause->num == 0 && nag->clause->isTrue == false)	flag = true;
-//			
-//			nag = nag->next;
-//		}
-//		
-//	}else{
-//		while(nag && nag->clause){
-//
-//			if(nag->clause->isTrue == false) {
-//				nag->clause->isTrue = true;
-//				deleteOneClause(nag->clause, op_clau,S,ans);
-//				cnt ++;
-//			}
-//			
-//			nag->clause->num --;			
-//				
-//			nag = nag->next;
-//		}
-//		
-//		while(pos && pos->clause){		
-//	
-//			pos->clause->num --;
-//						
-//			if(pos->clause->num == 0 && pos->clause->isTrue == false)	flag = true;
-//						
-//			pos = pos->next;
-//		}				
-//	}
-//	
-//	if(flag == true){			//	存在空子句 
-//		S.exist_emptyclause = true;
-//		/* printf("value = %d empty now! S.exist_emptyclause = %d\n",value,S.exist_emptyclause);*/
-//		
-//	}	
-//	
-///*printf("delete lit %d\n",value); 
-//showCNF(S); //每删一个文字
-//*/
-//	return cnt;
-//}
-
 int deleteLit( stack <INFO_C> &op_clau, CNF &S, int value, LITSHEET* ans/*,FILE *test*/)
 //17.	删除子句中的文字，同时也会删除真子句并记录真子句次数 
 {
@@ -591,7 +524,7 @@ int deleteLit( stack <INFO_C> &op_clau, CNF &S, int value, LITSHEET* ans/*,FILE 
 			nag = nag->next;
 		}
 		
-	}else{
+	}else if(value < 0){
 		while(nag && nag->clause){
 
 			if(nag->clause->isTrue == false) {
@@ -613,6 +546,9 @@ int deleteLit( stack <INFO_C> &op_clau, CNF &S, int value, LITSHEET* ans/*,FILE 
 						
 			pos = pos->next;
 		}				
+	}else{
+		printf("FUCK ! value = 0,ERROR\n");
+		exit(FALSE);
 	}
 	
 	if(flag == true){			//	存在空子句 
@@ -1158,7 +1094,6 @@ bool fundConsCNF(CNF &S, LITSHEET *ans)
 	return true; 
 }
 
-
 bool percentConsCNF(CNF &S, LITSHEET *ans)
 //2.	将反对角线、窗口限制转化为CNF(total 999)
 {
@@ -1543,13 +1478,15 @@ void showBoard(int board[N][N])
 }
 
 void Output_CNF(CNF &S)
+//15.
 {
-	FILE *fp = fopen("CNF_output.txt","w");
+	FILE *fp = fopen("CNF_output.cnf","w");
 	if(!fp){
 		printf("ERROR cannot output to 'CNF_output'");
 	}
 //	showCNF(S,fp);
-    fprintf(fp,"p cnf %d %d\n", S.num_var,S.num_clau );
+	time_t now = time(NULL);
+    fprintf(fp,"c Created Time: %sp cnf %d %d\n", ctime(&now), S.num_var, S.num_clau);
     CLAUSE *curr = S.head;
     
     while(curr){
@@ -1558,7 +1495,7 @@ void Output_CNF(CNF &S)
             fprintf(fp,"%d ", lit->value);
             lit = lit->next;
         }
-        fprintf(fp,"0\n");
+        fprintf(fp,"0\r");
 
         curr = curr->next;
     }
