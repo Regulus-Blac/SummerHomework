@@ -35,12 +35,12 @@ int main()
             	
             	ans = CNFparser(S,inFile,ans);
             	if(!ans)	break;
-            	
+            	showLitsheet(ans, 10); 
             	num_var = S.num_var;
 
 
                 if ( num_var ) {
-					showCNF(S);
+//					showCNF(S);
 
 					start = clock();
 					
@@ -82,17 +82,17 @@ int main()
 			}
                 
             case 2:{
-            	int mode;
-            	for(int i = 0;i <= SUDOKU_VAR;i++)	ans[i].ans = 0;
+            	int mode;char files[20] = "CNF_output.txt";
             	printf("Choose your game:1->SUDOKU 2->%%-SUDOKU 0->QUIT\n");
             	scanf("%d",&mode);
             	
             	if(!mode)	break;
 				fundConsCNF(sudoku,ans);
 				if(mode == 2)	percentConsCNF(sudoku,ans);
-				
+				Output_CNF(sudoku);
+				CNFparser(S,files,ans);
 				printf("sudoku num_clau = %d \n",sudoku.num_clau);
-
+				
 				generate(/*test,*/ op_clau, sudoku, board, ans);
 				clearCNF(sudoku, op_clau, ans);
 				

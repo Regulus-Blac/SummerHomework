@@ -14,7 +14,7 @@ using namespace std;
 #define FILE_MAX 30
 #define SUDOKU_VAR 729
 #define N 9
-#define MAX_BACK 730
+#define MAX_BACK 999
 typedef int status;
 
 /*数据结构*/
@@ -75,6 +75,7 @@ CLAUSE *existUnitClause(CLAUSE *head);
 bool existEmptyClause(CLAUSE *head); 
 CLAUSE *locatePre(CLAUSE *node,CLAUSE *head); 
 int deleteOneClause(CLAUSE *node, stack <INFO_C> &op_clau, CNF &S, LITSHEET* ans);
+bool deleteOneClause_slt(CLAUSE *Node, stack <INFO_C> &op_clau, CNF &S) ;
 
 int deleteClause(stack <INFO_C> &op_clau, CNF &S, LITSHEET* ans, int backtrace[]/*,FILE *test*/);
 int deleteLit( stack <INFO_C> &op_clau, CNF &S, int value, LITSHEET* ans/*,FILE *test*/);
@@ -104,3 +105,4 @@ bool generate(/*FILE *test,*/ stack <INFO_C> &op_clau, CNF &S, int board[N][N], 
 
 
 void showBoard(int board[N][N]);
+void Output_CNF(CNF &S);
