@@ -5,16 +5,16 @@
 #include <time.h>
 #include <windows.h>
 #include <stack> 
-
+//#define CHECK
 using namespace std;
 #define INFEASIBLE -1
 #define TRUE 1
 #define FALSE 0
-#define MAX_VAR 3000
+#define MAX_VAR 2000
 #define FILE_MAX 30
 #define SUDOKU_VAR 729
 #define N 9
-#define MAX_BACK 999
+#define MAX_BACK 400
 typedef int status;
 
 /*数据结构*/
@@ -69,6 +69,7 @@ LITSHEET* CNFparser(CNF &S, char file[],LITSHEET* ans);
 void showCNF(CNF &S);
 void showCNF(CNF &S,FILE *test);
 void showLitsheet(LITSHEET* ans, int range);
+void showLitans(LITSHEET* ans, int range);
 
 void showClause(CLAUSE *head);
 CLAUSE *existUnitClause(CLAUSE *head);
@@ -81,7 +82,7 @@ int deleteClause(stack <INFO_C> &op_clau, CNF &S, LITSHEET* ans, int backtrace[]
 int deleteLit( stack <INFO_C> &op_clau, CNF &S, int value, LITSHEET* ans/*,FILE *test*/);
 status restore_cl(int num, stack <INFO_C> &op_clau, CNF &S);
 status restore_lit(int back[], LITSHEET* ans);
-int choose_lit(CLAUSE *head, LITSHEET* ans);
+int choose_lit(CNF&S, LITSHEET* ans);
 
 bool DPLL(stack <INFO_C> &op_clau, CNF &S, LITSHEET* ans/*,FILE *test*/);
 void check(LITSHEET* ans, int cnt);
@@ -90,6 +91,7 @@ status saveOutput(LITSHEET* ans, int cnt, char file[], double used_time);
 void recover_lit(int back[], LITSHEET* ans);
 void recover_cl(int num, stack <INFO_C> &op_clau, CNF &S);     
 
+bool autocheck(CNF &S,LITSHEET* ans);
 /*Part Sudoku*/
     
 bool fundConsCNF(CNF &S, LITSHEET *ans);

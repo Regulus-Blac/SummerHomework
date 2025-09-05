@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "func.h"
  
 int main()
@@ -9,8 +10,18 @@ int main()
 	/*FILE *test = fopen("000.txt","w");*/
 	stack <INFO_C> op_clau;
 	CNF S;  initCNF(S, 0);
-	CNF sudoku;	initCNF(sudoku, SUDOKU_VAR);
+	
 	LITSHEET *ans = (LITSHEET *)malloc(sizeof(LITSHEET) * (1 + MAX_VAR));
+	if(!ans){
+		printf("NO MEMORY !\n");
+		return 0;
+	}
+	for(int i = 0;i <= MAX_VAR; i++){
+			ans[i].ans = 0;
+			ans[i].pos = NULL;
+			ans[i].nag = NULL;
+	}
+//	printf("ans is ready\n");
 	
     char file[FILE_MAX];
     int board[N][N] = {0};
@@ -37,8 +48,8 @@ int main()
             	if(!ans)	break;
 
             	num_var = S.num_var;
-
-
+				printf("BEFORE:NUM_CLAU= %d\n",S.num_clau); 
+//showLitsheet(ans,729);
                 if ( num_var ) {
 //					showCNF(S);
 
@@ -56,10 +67,16 @@ int main()
 						fclose(test);*/
 						ans[0].ans = 1;
 					}else{
-						printf("\nERROR! no solution\n");
+						printf("\nNO SOLUTION !\n");
 						ans[0].ans = 0;
 					}
-
+					
+					if(autocheck(S,ans)){
+						printf("\n\nAC\n\n");
+					}else{
+						printf("\n\nWA\n\n");
+					}
+					
 					printf("Duration:%.3f ms\n",used_time * 1000);
 				}
                     
@@ -72,11 +89,11 @@ int main()
 				if(saveOutput(ans,num_var,file,used_time))	printf("RES file has been saved !\n");
 				else										printf("ERROR!File NOT be saved\n\n");
 				
-
+//				showCNF(S);
+				printf("AFTER RECOVER NUM_CLAU = %d\n\n",S.num_clau);
 				printf("\nstart delete and init ...\nsuccess!\n\n");
 				
 				clearCNF(S, op_clau, ans) ;
-				for(int i = 0;i <= num_var; i++)	ans[i].ans = 0; 
 	
                 break;            	
 			}
@@ -87,16 +104,13 @@ int main()
             	scanf("%d",&mode);
             	
             	if(!mode)	break;
-				fundConsCNF(sudoku,ans);
-				if(mode == 2)	percentConsCNF(sudoku,ans);
+				fundConsCNF(S,ans);
+				if(mode == 2)	percentConsCNF(S,ans);
 				
-				Output_CNF(sudoku);
-				CNFparser(S,files,ans);
+				Output_CNF(S);
 				
-				printf("sudoku num_clau = %d \n",sudoku.num_clau);
-				
-				generate(/*test,*/ op_clau, sudoku, board, ans);
-				clearCNF(sudoku, op_clau, ans);
+				generate( op_clau, S, board, ans);
+				clearCNF(S, op_clau, ans);
 				
 				break;            	
 			}
