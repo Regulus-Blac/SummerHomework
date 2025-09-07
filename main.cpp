@@ -6,14 +6,15 @@ int main()
 	clock_t start, end;
 	double used_time;
 	srand(time(NULL));
-	const char* inSuf = ".cnf";
-	/*FILE *test = fopen("000.txt","w");*/
-	stack <INFO_C> op_clau;
+	const char* inSuf = ".cnf"; char file[FILE_MAX];
+    int board[N][N] = {0};
+    int choice = 0, num_var = 0;
+
 	CNF S;  initCNF(S, 0);
-	
 	LITSHEET *ans = (LITSHEET *)malloc(sizeof(LITSHEET) * (1 + MAX_VAR));
+
 	if(!ans){
-		printf("NO MEMORY !\n");
+		printf("NO MEMORY for ans!\n");
 		return 0;
 	}
 	for(int i = 0;i <= MAX_VAR; i++){
@@ -21,11 +22,6 @@ int main()
 			ans[i].pos = NULL;
 			ans[i].nag = NULL;
 	}
-//	printf("ans is ready\n");
-	
-    char file[FILE_MAX];
-    int board[N][N] = {0};
-    int choice = 0, num_var = 0;
 
     printf("What's your aim?\n");
     printf("1. Build CNF from file and Solve\n");
@@ -43,19 +39,21 @@ int main()
             	char inFile[FILE_MAX];
             	strcpy(inFile, file);
             	strcat(inFile, inSuf);
-            	
-            	ans = CNFparser(S,inFile,ans);
-            	if(!ans)	break;
+
+            	if(CNFparser(S,inFile,ans) == FALSE){
+					printf("ERROR in CNFparser!\n");
+					break;
+				}	
 
             	num_var = S.num_var;
 				printf("BEFORE:NUM_CLAU= %d\n",S.num_clau); 
-//showLitsheet(ans,729);
+				//showLitsheet(ans,729);
                 if ( num_var ) {
-//					showCNF(S);
+					// showCNF(S);
 
 					start = clock();
 					
-					bool t = DPLL(op_clau, S, ans/*, test*/);
+					bool t = DPLL(S, ans/*, test*/);
 					
 					end = clock();
 					used_time = ((double)(end - start)) / CLOCKS_PER_SEC;
@@ -63,8 +61,6 @@ int main()
 					if( t ){
 						printf("\n\n");
 						check(ans, num_var);
-						/*check(test,ans, num_var);
-						fclose(test);*/
 						ans[0].ans = 1;
 					}else{
 						printf("\nNO SOLUTION !\n");
@@ -78,39 +74,36 @@ int main()
 					}
 					
 					printf("Duration:%.3f ms\n",used_time * 1000);
-				}
+				}else 
+                    printf("Failed to parse CNF because no var!\n");
                     
-                else 
-                    printf("Failed to parse CNF.\n");
-                    
-				Sleep(500);		//¼ä¸ô0.5s 
+				Sleep(500);
 				printf("\nTry to Save as .res~~~\n");
 				
-				if(saveOutput(ans,num_var,file,used_time))	printf("RES file has been saved !\n");
+				if(saveOutput(ans,num_var,file,used_time))	printf("RES file has been saved !\n\n");
 				else										printf("ERROR!File NOT be saved\n\n");
 				
 //				showCNF(S);
 				printf("AFTER RECOVER NUM_CLAU = %d\n\n",S.num_clau);
-				printf("\nstart delete and init ...\nsuccess!\n\n");
-				
-				clearCNF(S, op_clau, ans) ;
-	
+				printf("\nstart delete and init ...\nsuccess!\n\n");	
+				clearCNF(S,ans);
+					
                 break;            	
 			}
                 
             case 2:{
-            	int mode;char files[20] = "CNF_output.cnf";
-            	printf("Choose your game:1->SUDOKU 2->%%-SUDOKU 0->QUIT\n");
-            	scanf("%d",&mode);
+            	// int mode;char files[20] = "CNF_output.cnf";
+            	// printf("Choose your game:1->SUDOKU 2->%%-SUDOKU 0->QUIT\n");
+            	// scanf("%d",&mode);
             	
-            	if(!mode)	break;
-				fundConsCNF(S,ans);
-				if(mode == 2)	percentConsCNF(S,ans);
+            	// if(!mode)	break;
+				// fundConsCNF(S,ans);
+				// if(mode == 2)	percentConsCNF(S,ans);
 				
-				Output_CNF(S);
+				// Output_CNF(S);
 				
-				generate( op_clau, S, board, ans);
-				clearCNF(S, op_clau, ans);
+				// generate( op_clau, S, board, ans);
+				// clearCNF(S, op_clau, ans);
 				
 				break;            	
 			}
