@@ -7,7 +7,9 @@ int main()
 	double used_time;
 	srand(time(NULL));
 	const char* inSuf = ".cnf"; char file[FILE_MAX];
-    int board[N][N] = {0};
+    int board[N][N];
+    for(int i = 0;i < N; i++)
+    	for(int j = 0;j < N; j++)	board[i][j] = 0;
     int choice = 0, num_var = 0;
 
 	CNF S;  initCNF(S, 0);
@@ -40,13 +42,17 @@ int main()
             	strcpy(inFile, file);
             	strcat(inFile, inSuf);
 
-            	if(CNFparser(S,inFile,ans) == FALSE){
+				int tempcp = CNFparser(S,inFile,ans);
+            	if( tempcp== FALSE){
 					printf("ERROR in CNFparser!\n");
 					break;
-				}	
+				}else if(tempcp == INFEASIBLE)	{
+					printf("realloc ERROR\n");
+					break;
+				}
 
             	num_var = S.num_var;
-				printf("BEFORE:NUM_CLAU= %d\n",S.num_clau); 
+//				printf("BEFORE:NUM_CLAU= %d\n",S.num_clau); 
 				//showLitsheet(ans,729);
                 if ( num_var ) {
 					// showCNF(S);
@@ -62,17 +68,16 @@ int main()
 						printf("\n\n");
 						check(ans, num_var);
 						ans[0].ans = 1;
+						
+						if(autocheck(S,ans)){
+							printf("\n\nAC\n\n");
+						}else{
+							printf("\n\nWA\n\n");
+						}						
 					}else{
 						printf("\nNO SOLUTION !\n");
 						ans[0].ans = 0;
-					}
-					
-					if(autocheck(S,ans)){
-						printf("\n\nAC\n\n");
-					}else{
-						printf("\n\nWA\n\n");
-					}
-					
+					}					
 					printf("Duration:%.3f ms\n",used_time * 1000);
 				}else 
                     printf("Failed to parse CNF because no var!\n");
@@ -81,10 +86,9 @@ int main()
 				printf("\nTry to Save as .res~~~\n");
 				
 				if(saveOutput(ans,num_var,file,used_time))	printf("RES file has been saved !\n\n");
-				else										printf("ERROR!File NOT be saved\n\n");
-				
+				else										printf("ERROR!File NOT be saved\n\n");			
 //				showCNF(S);
-				printf("AFTER RECOVER NUM_CLAU = %d\n\n",S.num_clau);
+//				printf("AFTER RECOVER NUM_CLAU = %d\n\n",S.num_clau);
 				printf("\nstart delete and init ...\nsuccess!\n\n");	
 				clearCNF(S,ans);
 					
@@ -92,18 +96,38 @@ int main()
 			}
                 
             case 2:{
-            	// int mode;char files[20] = "CNF_output.cnf";
-            	// printf("Choose your game:1->SUDOKU 2->%%-SUDOKU 0->QUIT\n");
-            	// scanf("%d",&mode);
+            	int mode;char files[20] = "CNF_output.cnf";
+            	printf("Choose your game:1->SUDOKU 2->%%-SUDOKU 0->QUIT\n");
+            	scanf("%d",&mode);
             	
-            	// if(!mode)	break;
-				// fundConsCNF(S,ans);
-				// if(mode == 2)	percentConsCNF(S,ans);
+            	if(!mode)	break;
+				fundConsCNF(S,ans);
+				if(mode == 2)	percentConsCNF(S,ans);
 				
-				// Output_CNF(S);
+				Output_CNF(S);
+//				SqList L;
+//				L.elem = (PCLAUSE *)malloc(sizeof(PCLAUSE) * 20);
+//				L.length = 0;
+//				L.listsize = 20;				
+					
+				bool t = generate(S, board, ans);
+				if(t){
+	//				printf("请选择难度： 1 for easy,2 for mid, 3 for high\n");
+	//				int diff;	scanf("%d",&diff);
+	//				if(diff == 1){
+	//					
+	//				}else if(diff == 2){
+	//					
+	//				}else if(deff == 3){
+	//					
+	//				}else{
+	//					printf("输入错误，将自动生成easy难度\n");
+	//				}					
+				}else{
+					printf("由于运气有点差QAQ,这一次生成终盘没有成功，请再试一次吧！AvA\n");
+				}
 				
-				// generate( op_clau, S, board, ans);
-				// clearCNF(S, op_clau, ans);
+
 				
 				break;            	
 			}

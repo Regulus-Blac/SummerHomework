@@ -1,22 +1,58 @@
 #include "func.h"
-
+#include <math.h>
+//#define CHECK
 /*构建动态数组 部分 */
 void InitList(SqList& L)
 // 1.线性表L不存在，构造一个空的线性表，返回OK，否则返回INFEASIBLE。
 {
-        L.elem = (PCLAUSE *)malloc(sizeof(PCLAUSE) * LIST_INIT_SIZE);
-        L.length = 0;
-        L.listsize = LIST_INIT_SIZE;
+	L.elem = (PCLAUSE *)malloc(sizeof(PCLAUSE) * LIST_INIT_SIZE);
+	if(!L.elem){
+		L.length = 0;
+		L.listsize = 0;
+		printf("InitList: malloc failed\n");
+		return;
+	}
+	L.length = 0;
+	L.listsize = LIST_INIT_SIZE;
+}
+void InitBack(SqBack &L)
+// 1.
+{
+	L.elem = (int *)malloc(sizeof(int) * MAX_BACK);
+	if(!L.elem){
+		L.length = 0;
+		L.listsize = 0;
+		printf( "InitBack: malloc failed\n");
+		return;
+	}else{
+		for(int i = 0;i < MAX_BACK;i++)	L.elem[i] = 0;
+	}
+	L.length = 0;
+	L.listsize = MAX_BACK;
 }
 status DestroyList(SqList& L)
 // 2.如果线性表L存在，销毁线性表L，释放数据元素的空间，返回OK，否则返回INFEASIBLE。
 {
-    if(!L.elem) return INFEASIBLE;
+	if(!L.elem) return INFEASIBLE;
 
-    free(L.elem);
-    L.elem = NULL;          //  避免悬挂指针
+	free(L.elem);
+	L.elem = NULL;          // 避免悬挂指针
+	L.length = 0;
+	L.listsize = 0;
 
-    return OK;
+	return OK;
+}
+status DestroyBack(SqBack& L)
+// 2.
+{
+	if(!L.elem) return INFEASIBLE;
+
+	free(L.elem);
+	L.elem = NULL;          // 避免悬挂指针
+	L.length = 0;
+	L.listsize = 0;
+
+	return OK;
 }
 status ClearList(SqList& L)
 // 3.如果线性表L存在，删除线性表L中的所有元素并重置，返回OK，否则返回INFEASIBLE。
@@ -31,28 +67,100 @@ status ClearList(SqList& L)
 
     return OK;
 }
-status ListInsert(SqList &L,CLAUSE *node)
-// 2.如果线性表L存在，将元素node插入到线性表L的末尾，返回OK；当插入位置不正确时，返回ERROR；如果线性表L不存在，返回INFEASIBLE。
+status ClearBack(SqBack& L)
+// 3.
 {
-    if(!L.elem)                     return INFEASIBLE;
-	if(node == NULL){
-		printf("insert a NULL,ERROR !\n");
-		return FALSE;
+    if(!L.elem) return INFEASIBLE;
+
+    free(L.elem);
+
+    L.listsize = MAX_BACK;
+    L.elem = (int *)malloc(sizeof(int) * L.listsize);
+    L.length = 0;
+
+    return OK;
+}
+status ListInsert(SqList &L, CLAUSE *node)
+// 4.如果线性表L存在，将元素node插入到线性表L的末尾，返回OK；当插入位置不正确时，返回ERROR；如果线性表L不存在，返回INFEASIBLE。
+{
+	if (!L.elem) {
+		printf( "ListInsert: L.elem is NULL (maybe destroyed)\n");
+		return INFEASIBLE;
 	}
-    if(L.length >= L.listsize){                         //  扩容
-        L.listsize += LISTINCREMENT;
-        L.elem = (PCLAUSE *)realloc(L.elem, sizeof(PCLAUSE) * L.listsize);
-		if(!L.elem){
-			printf("NO MEMORY !\n");
-			return INFEASIBLE;
-		}
+	if (L.listsize <= 0 || L.length < 0) {
+		printf( "ListInsert: invalid SqList state: length=%d listsize=%d elem=%p\n", L.length, L.listsize, (void*)L.elem);
+		return INFEASIBLE;
+	}
+    if (node == NULL) {
+        printf("insert a NULL,ERROR !\n");
+        return FALSE;
     }
-	
-    L.elem[L.length] = node;
-	L.length ++;
-	
+
+	if (L.length >= L.listsize) {
+        // 扩容
+        int new_listsize = L.listsize + LISTINCREMENT;
+        PCLAUSE *new_elem = (PCLAUSE *)realloc(L.elem, sizeof(PCLAUSE) * new_listsize);
+        
+		if (!new_elem) {
+			printf("NO MEMORY !\n");
+			return INFEASIBLE;  // 内存不足
+		}
+        // 扩容成功，更新指针和容量
+        L.elem = new_elem;
+        L.listsize = new_listsize;
+//		printf("扩容成功，现在有%d个元素，容量为%d\n",L.length, L.listsize);       
+    }
+	//	对新分配的内存进行初始化
+	for(int i = L.length ;i < L.listsize;i++){
+		L.elem[i] = NULL;
+	} 
+    // 插入元素
+
+	L.elem[L.length] = node;
+    L.length ++;
     return TRUE;
 }
+status BackInsert(SqBack &L, int node)
+// 4.
+{
+	if (!L.elem) {
+		printf("ListInsert: L.elem is NULL (maybe destroyed)\n");
+		return INFEASIBLE;
+	}
+	if (L.listsize <= 0 || L.length < 0) {
+		printf("ListInsert: invalid SqList state: length=%d listsize=%d elem=%p\n", L.length, L.listsize, (void*)L.elem);
+		return INFEASIBLE;
+	}
+    if (node == NULL) {
+        printf("insert a NULL,ERROR !\n");
+        return FALSE;
+    }
+
+	if (L.length >= L.listsize) {
+        // 扩容
+        int new_listsize = L.listsize + BACKINCREMENT;
+        int *new_elem = (int *)realloc(L.elem, sizeof(int) * new_listsize);
+        
+		if (!new_elem) {
+			printf("NO MEMORY !\n");
+			return INFEASIBLE;  // 内存不足
+		}
+        // 扩容成功，更新指针和容量
+        L.elem = new_elem;
+        L.listsize = new_listsize;
+//		printf("扩容成功，现在有%d个元素，容量为%d\n",L.length, L.listsize);       
+    }
+	//	对新分配的内存进行初始化
+	for(int i = L.length ;i < L.listsize;i++){
+		L.elem[i] = 0;
+	} 
+    // 插入元素
+
+	L.elem[L.length] = node;
+    L.length ++;
+    return TRUE;
+}
+
 /*DPLL 部分 1-26  共22个关键函数*/
 
 void makecopy(CNF &newS,const CNF &S) 
@@ -148,6 +256,10 @@ bool buildCNF(CNF &S, int num_clau, FILE *fp, LITSHEET* ans)
         createClause(S);
 
         while((fscanf(fp, "%d", &a)) != EOF && a != 0) {
+        	if(a > S.num_var){
+        		printf("Dirty Data! Beyond var_range!\n");
+        		exit(INFEASIBLE);
+			}
 			flag = true;
             LITERAL *newLiteral = (LITERAL *)malloc(sizeof(LITERAL));
             newLiteral->value = a; // 设置文字的值
@@ -326,7 +438,7 @@ void showLitans(LITSHEET* ans, int range)
 	printf("\n");
 }
 
-void showClause(CLAUSE *head)
+void showClause(CLAUSE *head,LITSHEET *ans)
 //11显示某一子句 
 {
 	CLAUSE *node = head;
@@ -337,8 +449,8 @@ void showClause(CLAUSE *head)
 	
 	while(lit){
 		printf("%d ",lit->value);
+		printf("ans = %d\n",ans[abs(lit->value)].ans);
 		lit = lit ->next;
-
 	}
 	printf("\n");
 }
@@ -403,7 +515,7 @@ int deleteOneClause(CLAUSE *node, SqList &L, CNF &S, LITSHEET* ans)
 	
 	if(node->num != 1){
 		printf("ERROR! Unitclause has %d clauses,showClause:\n",node->num);
-		showClause(node);
+		showClause(node,ans);
 		printf("\n");
 	}
 
@@ -418,21 +530,6 @@ int deleteOneClause(CLAUSE *node, SqList &L, CNF &S, LITSHEET* ans)
 
 	LITERAL *lit = node->lit;
 	int value; 
-	// INFO_C opt;
-	// CLAUSE *pre = locatePre(node, S.head);
-	// if(pre == NULL){						//	first clau
-	// 	opt.self = node;
-	// 	opt.pre = NULL;
-	// 	S.head = S.head->next;				//	恢复时移动S.head指针即可 
-	// 	if(S.num_clau == 1) S.tail = S.head;				//	只剩这一个了,此时头尾均为NULL 
-	// }else{
-	// 	opt.self = node;
-	// 	opt.pre = pre;		
-		
-	// 	if(node->next == NULL)	S.tail = pre;
-	// 	pre->next = pre->next->next;		//	移动指针以“删除”一个子句指针 
-	// } 
-	// op_clau.push(opt);
 	
 	while(lit) {
 		value = lit->value;
@@ -442,7 +539,7 @@ int deleteOneClause(CLAUSE *node, SqList &L, CNF &S, LITSHEET* ans)
 		lit = lit->next;
 	}
 	printf("ERROR! Cannot find any lit in unitclause:\n");
-	showClause(node); 
+	showClause(node,ans); 
 	printf("\n");
 
 	return 0;
@@ -467,25 +564,11 @@ bool deleteOneClause_slt(CLAUSE *node, SqList &L, CNF &S)
 	node->isTrue = true;			//删除
 	S.num_clau --;
 	ListInsert(L,node);
-	// INFO_C opt;
-	// CLAUSE *pre = locatePre(node, S.head);
-	// if(pre == NULL){						//	first clau
-	// 	opt.self = node;
-	// 	opt.pre = NULL;
-	// 	S.head = S.head->next;				//	恢复时移动S.head指针即可 
-	// 	if(S.num_clau == 1) S.tail = S.head;				//	只剩这一个了,此时头尾均为NULL 
-	// }else{
-	// 	opt.self = node;
-	// 	opt.pre = pre;		
-	// 	if(node->next == NULL)	S.tail = pre;
-	// 	pre->next = pre->next->next;		//	移动指针以“删除”一个子句指针 
-	// } 
-	// op_clau.push(opt);
 
 	return true;
 }
 
-int deleteClause(SqList &L, CNF &S, LITSHEET* ans, int backtrace[]/*,FILE *test*/)
+int deleteClause(SqList &L, CNF &S, LITSHEET* ans, SqBack &backtrace)
 //16. 删除所有单子句，并对CNF进行化简；记录操作次数,将单子句中变量值记录 
 {
 	if(S.num_clau == 0 || !S.head){
@@ -502,8 +585,11 @@ int deleteClause(SqList &L, CNF &S, LITSHEET* ans, int backtrace[]/*,FILE *test*
 	
 	while(node != NULL){
 		// 找到并删除单子句
-
-//		 printf("正在处理单子句，首元素=%d\n", node->lit->value);
+//		if(cnt >= MEMORY_MAX){
+//			//假如说单子句这里就很大了，后面deletelit更多，截断一下
+//			printf("Too Much UClaus, we need to use another DPLL to load them!\n");
+//			return cnt;
+//		}
 		if(node->isTrue == true){
 			printf("ERROR in 'existUnitClause' unitclause is already true\n");
 			node = existUnitClause(node->next);
@@ -528,7 +614,7 @@ int deleteClause(SqList &L, CNF &S, LITSHEET* ans, int backtrace[]/*,FILE *test*
 		}	
 		
 		cnt ++;
-		backtrace[++backtrace[0]] = value;
+		BackInsert(backtrace, value);
 		
 		// 化简CNF,并记录删除真子句数		
 		cnt += deleteLit(L, S, value, ans);
@@ -637,28 +723,28 @@ showCNF(S); //每删一个文字
 }
 
 int choose_lit_1(CNF&S, LITSHEET* ans)
-//18. 随机选一个 第一个还是false的子句的第一个有效文字赋值
+//18.选false子句的第一个未定文字 
 {
-	int lucky ;
-	lucky = rand() % 8;
-	if(lucky == 2){					//1/8 ans第一个 
-		for(int i = S.num_var;i > 0;i--){
-			if(ans[i].ans == 0)				return i;
-		} 
-	}else if(lucky == 1){			//1/8 ans最后一个 
-		for(int i = 1;i <= S.num_var;i++){
-			if(ans[i].ans == 0)				return i;
-		} 		
-	}else if(lucky == 3){			//ans中间往后 
-		for(int i = S.num_var/2;i <= S.num_var;i++){
-			if(ans[i].ans == 0)				return i;
-		} 		
-	}else if(lucky == 0){			//ans中间往前 
-		for(int i = S.num_var/2 ;i > 0 ;i--){
-			if(ans[i].ans == 0)				return i;
-		} 		
-	}else{	//1/2 无脑第一个 
-		CLAUSE *node = S.head;	LITERAL *lit;	int i ;
+	CLAUSE *big = existUnitClause(S.head);
+	CLAUSE *node = S.head;
+	LITERAL *lit = NULL;
+	int i ;
+	if(big) {
+		lit = big->lit;
+		while(lit){
+			i = lit->value;
+			if(ans[abs(i)].ans == 0)		return i;
+			lit = lit->next;
+		}
+		printf("ERROR in choose_lit:UnitClause has no lit.\n");	
+		showClause(big,ans);			
+		return 0;
+	}
+	//	把单子句一网打尽按理说没有单子句了 
+//	int lucky ;
+//	lucky = rand() % RANDOM_DIV;
+//	if(lucky){							//	2/3 第一个 
+
 		while(node){
 			if(node->isTrue == false && node->num > 0) {
 				lit = node->lit;
@@ -667,19 +753,18 @@ int choose_lit_1(CNF&S, LITSHEET* ans)
 					if(ans[abs(i)].ans == 0)		return i;
 					lit = lit->next;
 				}
-				printf("ERROR in 'choose_lit'\n");
+				printf("ERROR in choose_lit:the chosen Clause has no lit.\n");
+				showClause(node,ans);
 				return 0;
 			}
 			node = node->next;
-		}		
-	}
-
-	printf("ERROR! cannot choose any lit.strategy is %d\n",lucky);
-	showLitsheet(ans,S.num_var);
+		}				
+	
 	return 0;
 }
+
 int choose_lit_2(CNF&S, LITSHEET* ans)
-//18选目前含有最多false子句的文字
+//18.选目前在更多false子句中出现的文字 
 {
 	INFO_L *lit = NULL;
 	int max = 0,record = 0, cnt = 0;
@@ -721,20 +806,127 @@ int choose_lit_2(CNF&S, LITSHEET* ans)
 		return record;
 }
 
+int choose_lit_jw(CNF &S, LITSHEET* ans)
+// Jeroslow-Wang:在还没结果的var中选择子句尽量短的 
+{
+	int best_lit = 0;
+	double best_score = -1.0;
+
+	for(int i = 1; i <= S.num_var; ++i){
+		if(ans[i].ans != 0) continue;
+
+		double pos_score = 0.0, neg_score = 0.0;
+		INFO_L* p = ans[i].pos;
+		while(p){
+			if(p->clause && p->clause->isTrue == false && p->clause->num > 0){
+				pos_score += pow(2.0, - (double)p->clause->num);
+			}
+			p = p->next;
+		}
+
+		p = ans[i].nag;
+		while(p){
+			if(p->clause && p->clause->isTrue == false && p->clause->num > 0){
+				neg_score += pow(2.0, - (double)p->clause->num);
+			}
+			p = p->next;
+		}
+
+		if(pos_score > best_score){
+		 	best_score = pos_score; 
+			best_lit = i; 
+		 }
+		if(neg_score > best_score){
+			best_score = neg_score; 
+			best_lit = -i; 
+		}
+	}
+
+	return best_lit;
+}
+
+int choose_lit_hybrid(CNF &S, LITSHEET* ans)
+// 将jw和2混合起来，算综合加权评分 
+{
+	const double alpha = 0.7;
+	const double beta = 0.3;
+
+	int best = 0;
+	double best_score = -1.0;
+
+	for(int i = 1;i <= S.num_var; i++){
+		if(ans[i].ans != 0) continue;
+
+		// 方法2
+		int cnt_pos = 0, cnt_neg = 0;
+		INFO_L *lit = ans[i].pos;
+		while(lit){
+			if(lit->clause && lit->clause->isTrue == false) cnt_pos++;
+			
+			lit = lit->next; 
+		}
+		lit = ans[i].nag;
+		while(lit){
+			if(lit->clause && lit->clause->isTrue == false) cnt_neg++; 
+			
+			lit = lit->next; 
+		}
+		//	jw方法 
+		double pos_jw = 0.0, neg_jw = 0.0;
+		INFO_L *p = ans[i].pos; 
+		while(p){
+		 	if(p->clause && p->clause->isTrue == false && p->clause->num > 0) 	pos_jw += pow(2.0, -(double)p->clause->num); 
+		 
+		 	p = p->next; 
+		 }
+		p = ans[i].nag; 
+		while(p){ 
+			if(p->clause && p->clause->isTrue==false && p->clause->num>0) 		neg_jw += pow(2.0, -(double)p->clause->num); 
+			
+			p = p->next; 
+		}
+
+		double score_pos = alpha * pos_jw + beta * (double)cnt_pos;
+		double score_neg = alpha * neg_jw + beta * (double)cnt_neg;
+
+		if(score_pos > best_score){ 
+			best_score = score_pos; 
+			best = i; 
+		}
+		if(score_neg > best_score)
+		{ 
+			best_score = score_neg; 	
+			best = -i; 
+		}
+	}
+
+	// 随机选正或负文字 
+	if(best != 0 && (rand() % 10) == 0) best = -best;
+	return best;
+}
+
 bool DPLL(CNF &S, LITSHEET* ans)
 //19.	CORE
 {
 	static int depth = 0;
+	static int depth_max = 0;
+
 	depth ++;
-//	printf("num_trueclau = %d\n",num_trueclau(S));
-//	
-//	printf("DPLL depth rightnow = %d\n",depth);
-//	showCNF(S);
+//	printf("depth = %d\n",depth); 
+	if(depth > depth_max){
+		depth_max = depth;
+	}
+//	printf("depth_max = %d\n",depth_max);
+//printf("本次DPLL前子句数目为%d\n",S.num_clau);
+
 #ifdef CHECK
 		printf("本次DPLL前子句数目为%d\n",S.num_clau);
+		printf("DPLL depth rightnow = %d\n",depth);
+		showCNF(S);
 #endif
-	SqList L;	InitList(L);			//记录删除的真子句的地址，便于回溯时复原
-	int backtrace[MAX_BACK] = {0};		//记录删除真子句时删除并确定值的文字，back【0】为个数
+
+	SqList L;	InitList(L);						//记录删除的真子句的地址，便于回溯时复原
+	SqBack backtrace;	InitBack(backtrace);		//记录删除真子句时删除并确定值的文字，.length为个数
  	int cntCLAU = 0;
  	int chosenlit = 0;
 //1.删掉并化简上一轮DPLL所选择的文字
@@ -742,13 +934,15 @@ bool DPLL(CNF &S, LITSHEET* ans)
  		chosenlit = ans[0].ans;
  		cntCLAU += deleteLit(L, S, chosenlit, ans);	 
  			 
- 		backtrace[0] ++;
- 		backtrace[1] = chosenlit;
+ 		backtrace.length ++;
+ 		backtrace.elem[0] = chosenlit;
 	
  		if(S.exist_emptyclause) {			//Prune（不要放在更新backtrace数组之前！改了2天... 
 			restore_cl(L, S);
 			restore_lit(backtrace, ans);
-			free(L.elem);	
+			DestroyList(L);
+			DestroyBack(backtrace);
+			depth --;	
 			return false; 			
 		 } 		
 	}
@@ -760,7 +954,7 @@ bool DPLL(CNF &S, LITSHEET* ans)
 	// showCNF(S); 
 	
 // 2.删除所有单子句，删除包含该文字的子句，删去反文字,并记录操作次数
-	cntCLAU += deleteClause(L,S, ans, backtrace/*,test*/);
+	cntCLAU += deleteClause(L,S, ans, backtrace);
 
 	// printf("code 1&2删掉%d个单子句\n",cntCLAU);
 	// showCNF(S);
@@ -772,59 +966,69 @@ bool DPLL(CNF &S, LITSHEET* ans)
 //3.检查当前CNF状态
  		//3.1.成功解出 
 	if(S.num_clau == 0 || S.head == NULL ){
-		
 		restore_cl(L, S);
 		recover_lit(backtrace, ans);
-		free(L.elem);
+		DestroyList(L);
+		DestroyBack(backtrace);
 		return true;		
 	}	//3.2.出现矛盾
 	else if(S.exist_emptyclause) {
 		restore_cl(L, S);
 		restore_lit(backtrace, ans);
-		free(L.elem);
+		DestroyList(L);
+		DestroyBack(backtrace);
+		depth --;
 		return false;		
 	}	
-	
 // 4.选取一个变量赋值 
-	int chosen = choose_lit_2(S,ans), index = abs(chosen);
+	int chosen = choose_lit_1(S,ans);
+	int index = abs(chosen);
+	#ifdef CHECK	
+	printf("choose %d as a break\n",chosen);
+	#endif
 	if(!index){		
 		restore_cl(L, S);
 		restore_lit(backtrace, ans);
-		free(L.elem);
+		DestroyList(L);
+		DestroyBack(backtrace);
+		depth --;
 		return false;		
 	}
-
+	
+	//4.1
 	ans[index].ans = (chosen > 0) ? 1:2;
-	ans[0].ans = chosen;	
-//	printf("choose %d as a break\n",chosen);
-
+	ans[0].ans = chosen;
+	
 	if(DPLL(S, ans)){
 		restore_cl(L, S);
 		recover_lit(backtrace, ans);
-		free(L.elem);
+		DestroyList(L);
+		DestroyBack(backtrace);
 		return true;
 	}
 //	printf("DPLL with %d FAIL\n",chosen);
 
+	//4.2
 	ans[index].ans = (chosen > 0) ? 2:1;
 	ans[0].ans = -chosen;
 
 	if(DPLL(S, ans)){
 		restore_cl(L, S);
 		recover_lit(backtrace, ans);
-		free(L.elem);
+		DestroyList(L);
+		DestroyBack(backtrace);
 		return true;
 	}
 //	printf("DPLL with %d FAIL,ALL fail\n",-chosen);
-	//	当前分支失败，开始回溯 
+
+//	5.当前分支失败，开始回溯 
 	ans[index].ans = 0;
-
- 	// printf("code 4 删掉的%d个文字：",backtrace[0]); 
- 	// for(int i = backtrace[0];i > 0; i --)	printf("%d ",backtrace[i]); 	   
-	restore_cl(L, S);	
+		   
+	restore_cl(L, S);    
 	restore_lit(backtrace, ans);
-	free(L.elem);
-
+	DestroyList(L);
+	DestroyBack(backtrace);
+	depth --;
 	return false;
 }
 
@@ -832,7 +1036,7 @@ status restore_cl(SqList &L, CNF &S)
 //20.	恢复若干次子句bool
 {
 #ifdef CHECK
-	printf("恢复子句中，DPLL化简后CNF有%d个子句,num = %d\n",S.num_clau,num);
+	printf("恢复子句中，DPLL化简后CNF有%d个子句\n",S.num_clau);
 #endif
 //	showCNF(S);
 	for(int i = 0;i < L.length; i++){
@@ -856,25 +1060,25 @@ status restore_cl(SqList &L, CNF &S)
 #ifdef CHECK
 	printf("恢复完成，现在CNF有%d个子句\n",S.num_clau);
 #endif
-
+//	printf("恢复完成，现在CNF有%d个子句\n",S.num_clau);
 //	showCNF(S);
 	return TRUE;
 }
 
-status restore_lit(int back[], LITSHEET* ans)
+status restore_lit(SqBack &back, LITSHEET* ans)
 //21.	恢复 变元bool值，子句的文字数，不管子句bool 
 {
-	if(!back){
+	if(!back.elem){
 		printf("ERROR! back[] is empty!\n");
 		return FALSE;
 	}	
 
 #ifdef CHECK
-	printf("恢复文字中，展示backtrace数组：一共%d个文字被恢复\n",back[0]);
+	printf("恢复文字中，展示back数组：一共%d个文字被恢复\n",back.length);
 #endif
 
-	for(int i = 1;i <= back[0] ;i++){
-		int index = abs(back[i]);
+	for(int i = 0;i < back.length ;i++){
+		int index = abs(back.elem[i]);
 			
 		ans[index].ans = 0;		//bool值
 		
@@ -891,20 +1095,24 @@ status restore_lit(int back[], LITSHEET* ans)
 			p->clause->num ++;
 			p = p->next;
 		}	
+#ifdef CHECK
+	printf("%d \n",back.elem[i]);
+#endif
 
-		#ifdef CHECK
-			printf("%d \n",back[i]);
-		#endif
-	}
-		
+	}	
 	return TRUE;
 }
 
-void recover_lit(int back[], LITSHEET* ans)
+void recover_lit(SqBack &back, LITSHEET* ans)
 //22.	将删去的文字数全部加回来,保留原来的ans值 
 { 
-	for(int i = 1;i <= back[0] ;i++){
-		int index = abs(back[i]);
+	if(!back.elem){
+		printf("ERROR! back[] is empty!\n");
+		return;
+	}
+	
+	for(int i = 0;i < back.length ;i++){
+		int index = abs(back.elem[i]);
 		
 		INFO_L* p = ans[index].pos;
 		
@@ -1028,670 +1236,707 @@ int num_trueclau(CNF &S)
 //	5.达到目标空洞数时输出数独初盘 
 
 
-// bool fundConsCNF(CNF &S, LITSHEET *ans)
-// //1.	将格、行列、宫限制转化为CNF (total 11988)
-// {
-// 	if(S.num_clau) return false;
-// 	S.num_var = 729;
-// 	// 初始化ans 
-// 	for(int i = 0;i <= SUDOKU_VAR; i++){
-// 		ans[i].ans = 0;
-// 		ans[i].pos = NULL;
-// 		ans[i].nag = NULL;
-// 	}		
-// 	int temp[9] = {1,2,3,4,5,6,7,8,9}, t = 1;
+ bool fundConsCNF(CNF &S, LITSHEET *ans)
+//1.	将格、行列、宫限制转化为CNF (total 11988)
+//除去格约束（可省）一共8991个子句 
+ {
+ 	if(S.num_clau) return false;
+ 	S.num_var = 729;
+ 	// 初始化ans 
+ 	for(int i = 0;i <= SUDOKU_VAR; i++){
+ 		ans[i].ans = 0;
+ 		ans[i].pos = NULL;
+ 		ans[i].nag = NULL;
+ 	}		
+ 	int temp[9] = {1,2,3,4,5,6,7,8,9}, t = 1;
 	
-// //// 格约束 (2997个子句)
-// //	for(int j = 0;j < 81; j ++){	//81个格子每个格子37个子句 
-// //	// -1 -2 0同一格不可以填两个数	
-// //		for(int i = 0; i < 9; i++){
-// //			for(int k = i + 1;k < 9; k++){
-// //				createClause(S);
-// //				LITERAL *a = (LITERAL *)malloc(sizeof(LITERAL)), *b = (LITERAL *)malloc(sizeof(LITERAL));
-// //				a->next = NULL;	b->next = NULL;
-// //				a->value = -temp[i];b->value = -temp[k];
-// //				
-// //				S.tail->lit = a;
-// //				a->next = b;
-// //				S.tail->num = 2;
-// //				
-// //				buildLitsheet(ans, S.tail, -temp[i]);
-// //				buildLitsheet(ans, S.tail, -temp[k]);
-// //			}
-// //		}
-// //		
-// //	// 1 2 3 4 5 6 7 8 9 每格填一个1-9的数 
-// //		createClause(S);		
-// //		for(int i = 0;i < 9;i ++){
-// //				
-// //	        LITERAL *newLiteral = (LITERAL *)malloc(sizeof(LITERAL));
-// //	        newLiteral->next = NULL;        
-// //	        newLiteral->value = temp[i]; 
-// //	        
-// //	        buildLitsheet(ans, S.tail, temp[i]);
-// //	        
-// //	        temp[i] += 9;				//	为下一轮循环做准备 
-// //				
-// //			if(S.tail->lit == NULL) {
-// //	            S.tail->lit = newLiteral;
-// //	        } else {
-// //	            LITERAL *lastLit = S.tail->lit;
-// //	            newLiteral->next = lastLit;
-// //	            S.tail->lit = newLiteral;
-// //	        }       
-// //	        			
-// //		}
-// //		S.tail->num = 9;
-// //	}	
-// //	S.num_clau += 2997;
-	
-// // 行约束	
-// 	for(int i = 0;i < 9;i ++){
-// 		temp[i] = t;
-// 		t += 9;
-// 	}
-	
-// 	for(int row = 0;row < 9;row ++){		//9行
-	
-// 		for(int j = 0;j < 9;j++){
-// 		//row行不能重复j -1 -10 
-// 			for(int i = 0; i < 9; i++){
-// 				for(int k = i + 1;k < 9; k++){
-// 					createClause(S);
-// 					LITERAL *a = (LITERAL *)malloc(sizeof(LITERAL)), *b = (LITERAL *)malloc(sizeof(LITERAL));
-// 					a->next = NULL;	b->next = NULL;
-// 					a->value = -temp[i];b->value = -temp[k];
+ //// 格约束 (2997个子句)
+ //	for(int j = 0;j < 81; j ++){	//81个格子每个格子37个子句 
+ //	// -1 -2 0同一格不可以填两个数	
+ //		for(int i = 0; i < 9; i++){
+ //			for(int k = i + 1;k < 9; k++){
+ //				createClause(S);
+ //				LITERAL *a = (LITERAL *)malloc(sizeof(LITERAL)), *b = (LITERAL *)malloc(sizeof(LITERAL));
+ //				a->next = NULL;	b->next = NULL;
+ //				a->value = -temp[i];b->value = -temp[k];
+ //				
+ //				S.tail->lit = a;
+ //				a->next = b;
+ //				S.tail->num = 2;
+ //				
+ //				buildLitsheet(ans, S.tail, -temp[i]);
+ //				buildLitsheet(ans, S.tail, -temp[k]);
+ //			}
+ //		}
+ //		
+ //	// 1 2 3 4 5 6 7 8 9 每格填一个1-9的数 
+ //		createClause(S);		
+ //		for(int i = 0;i < 9;i ++){
+ //				
+ //	        LITERAL *newLiteral = (LITERAL *)malloc(sizeof(LITERAL));
+ //	        newLiteral->next = NULL;        
+ //	        newLiteral->value = temp[i]; 
+ //	        
+ //	        buildLitsheet(ans, S.tail, temp[i]);
+ //	        
+ //	        temp[i] += 9;				//	为下一轮循环做准备 
+ //				
+ //			if(S.tail->lit == NULL) {
+ //	            S.tail->lit = newLiteral;
+ //	        } else {
+ //	            LITERAL *lastLit = S.tail->lit;
+ //	            newLiteral->next = lastLit;
+ //	            S.tail->lit = newLiteral;
+ //	        }       
+ //	        			
+ //		}
+ //		S.tail->num = 9;
+ //	}	
+ //	S.num_clau += 2997;	
+ // 行约束	2997
+ 	for(int i = 0;i < 9;i ++){
+ 		temp[i] = t;
+ 		t += 9;
+ 	}	
+ 	for(int row = 0;row < 9;row ++){		//9行
+ 		for(int j = 0;j < 9;j++){
+ 		//row行不能重复j -1 -10 
+ 			for(int i = 0; i < 9; i++){
+ 				for(int k = i + 1;k < 9; k++){
+ 					createClause(S);
+ 					S.num_clau ++;
+ 					LITERAL *a = (LITERAL *)malloc(sizeof(LITERAL)), *b = (LITERAL *)malloc(sizeof(LITERAL));
+ 					a->next = NULL;	b->next = NULL;
+ 					a->value = -temp[i];b->value = -temp[k];					
+ 					S.tail->lit = a;
+ 					a->next = b;
+ 					S.tail->num = 2;					
+ 					buildLitsheet(ans, S.tail, -temp[i]);
+ 					buildLitsheet(ans, S.tail, -temp[k]);					
+ 				}
+ 			}			
+ 		//row行都有j 1 10 19... 73
+ 			createClause(S);
+			S.num_clau ++;		
+ 			for(int i = 0;i < 9;i ++){					
+ 		        LITERAL *newLiteral = (LITERAL *)malloc(sizeof(LITERAL));
+ 		        newLiteral->next = NULL;        
+ 		        newLiteral->value = temp[i]; 		        
+ 		        buildLitsheet(ans, S.tail, temp[i]);
+ 		        temp[i] += 1;				//	为 j 下一轮循环做准备
 					
-// 					S.tail->lit = a;
-// 					a->next = b;
-// 					S.tail->num = 2;
+ 				if(S.tail->lit == NULL) {
+ 		            S.tail->lit = newLiteral;
+ 		        } else {
+ 		            LITERAL *lastLit = S.tail->lit;
+ 		            newLiteral->next = lastLit;
+ 		            S.tail->lit = newLiteral; 
+ 		        }
 					
-// 					buildLitsheet(ans, S.tail, -temp[i]);
-// 					buildLitsheet(ans, S.tail, -temp[k]);					
-// 				}
-// 			}			
-// 		//row行都有j 1 10 19... 73
-// 			createClause(S);		
-// 			for(int i = 0;i < 9;i ++){
-					
-// 		        LITERAL *newLiteral = (LITERAL *)malloc(sizeof(LITERAL));
-// 		        newLiteral->next = NULL;        
-// 		        newLiteral->value = temp[i]; 
-		        
-// 		        buildLitsheet(ans, S.tail, temp[i]);
-		        
-// 		        temp[i] += 1;				//	为 j 下一轮循环做准备
-					
-// 				if(S.tail->lit == NULL) {
-// 		            S.tail->lit = newLiteral;
-// 		        } else {
-// 		            LITERAL *lastLit = S.tail->lit;
-// 		            newLiteral->next = lastLit;
-// 		            S.tail->lit = newLiteral; 
-// 		        }
-					
-// 			}
-// 			S.tail->num = 9;	
+ 			}
+ 			S.tail->num = 9;	
 
-// 		}
+ 		}
 		
-// 		// 初始化辅助数组(下一行的 
-// 		temp[0] = temp[8] + 1;		
-// 		for(int i =1;i < 9;i ++)	temp[i] = temp[i-1] + 9;		
-// 	}
-// 	S.num_clau += 2997;
+ 		// 初始化辅助数组(下一行的 
+ 		temp[0] = temp[8];		//这里不用+1因为上面已经加过了 
+ 		for(int i =1;i < 9;i ++)	temp[i] = temp[i-1] + 9;		
+ 	}
+
 	
-// // 列约束
-// 	t = 1;
-// 	for(int i = 0;i < 9;i ++){
-// 		temp[i] = t;
-// 		t += 81;
-// 	}
+ // 列约束 2997
+ 	t = 1;
+ 	for(int i = 0;i < 9;i ++){
+ 		temp[i] = t;
+ 		t += 81;
+ 	}
 	
-// 	for(int col = 0;col < 9;col ++){		//9列 
+ 	for(int col = 0;col < 9;col ++){		//9列 
 	
-// 		for(int j = 0;j < 9;j++){
-// 		//col列不能重复j -1 -82 
-// 			for(int i = 0; i < 9; i++){
-// 				for(int k = i + 1;k < 9; k++){
-// 					createClause(S);
-// 					LITERAL *a = (LITERAL *)malloc(sizeof(LITERAL)), *b = (LITERAL *)malloc(sizeof(LITERAL));
-// 					a->next = NULL;	b->next = NULL;
-// 					a->value = -temp[i];b->value = -temp[k];
+ 		for(int j = 0;j < 9;j++){
+ 		//col列不能重复j -1 -82 
+ 			for(int i = 0; i < 9; i++){
+ 				for(int k = i + 1;k < 9; k++){
+ 					createClause(S);
+ 					S.num_clau ++;
+ 					LITERAL *a = (LITERAL *)malloc(sizeof(LITERAL)), *b = (LITERAL *)malloc(sizeof(LITERAL));
+ 					a->next = NULL;	b->next = NULL;
+ 					a->value = -temp[i];b->value = -temp[k];
 					
-// 					S.tail->lit = a;
-// 					a->next = b;
-// 					S.tail->num = 2;
+ 					S.tail->lit = a;
+ 					a->next = b;
+ 					S.tail->num = 2;
 					
-// 					buildLitsheet(ans, S.tail, -temp[i]);
-// 					buildLitsheet(ans, S.tail, -temp[k]);					
-// 				}
-// 			}			
-// 		//col列都有j 1 82 163... 649
-// 			createClause(S);		
-// 			for(int i = 0;i < 9;i ++){
+ 					buildLitsheet(ans, S.tail, -temp[i]);
+ 					buildLitsheet(ans, S.tail, -temp[k]);					
+ 				}
+ 			}			
+ 		//col列都有j 1 82 163... 649
+ 			createClause(S);
+			S.num_clau ++;		
+ 			for(int i = 0;i < 9;i ++){
 					
-// 		        LITERAL *newLiteral = (LITERAL *)malloc(sizeof(LITERAL));
-// 		        newLiteral->next = NULL;        
-// 		        newLiteral->value = temp[i];
+ 		        LITERAL *newLiteral = (LITERAL *)malloc(sizeof(LITERAL));
+ 		        newLiteral->next = NULL;        
+ 		        newLiteral->value = temp[i];
 		        
-// 				buildLitsheet(ans, S.tail, temp[i]); 
+ 				buildLitsheet(ans, S.tail, temp[i]); 
 				
-// 		        temp[i] += 1;				//	为 j 下一轮循环做准备
+ 		        temp[i] += 1;				//	为 j 下一轮循环做准备
 					
-// 				if(S.tail->lit == NULL) {
-// 		            S.tail->lit = newLiteral;
-// 		        } else {
-// 		            LITERAL *lastLit = S.tail->lit;
-// 		            newLiteral->next = lastLit;
-// 		            S.tail->lit = newLiteral; 
-// 		        }
+ 				if(S.tail->lit == NULL) {
+ 		            S.tail->lit = newLiteral;
+ 		        } else {
+ 		            LITERAL *lastLit = S.tail->lit;
+ 		            newLiteral->next = lastLit;
+ 		            S.tail->lit = newLiteral; 
+ 		        }
 					
-// 			}
-// 			S.tail->num = 9;	
+ 			}
+ 			S.tail->num = 9;	
 
-// 		}		
-// 	}
-// 	S.num_clau += 2997;
+ 		}		
+ 	}
+
 	
-// // 宫约束
-// 	t = 1;	temp[0] = t;
-// 	for(int i = 1;i < 9;i ++){
-// 		temp[i] = temp[i - 1] + ((i % 3 == 0) ? 63 : 9);
-// 	}
+ // 宫约束	2997
+ 	t = 1;	temp[0] = t;
+ 	for(int i = 1;i < 9;i ++){
+ 		temp[i] = temp[i - 1] + ((i % 3 == 0) ? 63 : 9);
+ 	}
 	
-// 	for(int row = 0; row < 3; row ++){		//宫按行分，有三行 
+ 	for(int row = 0; row < 3; row ++){		//宫按行分，有三行 
 	
-// 		for(int col = 0; col < 3; col++){	//每行有三个 
+ 		for(int col = 0; col < 3; col++){	//每行有三个 
 		
-// 			for(int j = 0;j < 9;j++){		
-// 				//	每个宫内不重复j -1 -10 
-// 				for(int i = 0; i < 9; i++){
-// 					for(int k = i + 1;k < 9; k++){
-// 						createClause(S);
-// 						LITERAL *a = (LITERAL *)malloc(sizeof(LITERAL)), *b = (LITERAL *)malloc(sizeof(LITERAL));
-// 						a->next = NULL;	b->next = NULL;
-// 						a->value = -temp[i];b->value = -temp[k];
+ 			for(int j = 0;j < 9;j++){		
+ 				//	每个宫内不重复j -1 -10 
+ 				for(int i = 0; i < 9; i++){
+ 					for(int k = i + 1;k < 9; k++){
+ 						createClause(S);
+ 						S.num_clau ++;
+ 						LITERAL *a = (LITERAL *)malloc(sizeof(LITERAL)), *b = (LITERAL *)malloc(sizeof(LITERAL));
+ 						a->next = NULL;	b->next = NULL;
+ 						a->value = -temp[i];b->value = -temp[k];
 						
-// 						S.tail->lit = a;
-// 						a->next = b;
-// 						S.tail->num = 2;
+ 						S.tail->lit = a;
+ 						a->next = b;
+ 						S.tail->num = 2;
 						
-// 						buildLitsheet(ans, S.tail, -temp[i]);
-// 						buildLitsheet(ans, S.tail, -temp[k]);						
-// 					}
-// 				}
-// 				//	每个宫内都有j	
-// 				createClause(S);		
-// 				for(int i = 0;i < 9;i ++){
+ 						buildLitsheet(ans, S.tail, -temp[i]);
+ 						buildLitsheet(ans, S.tail, -temp[k]);						
+ 					}
+ 				}
+ 				//	每个宫内都有j	
+ 				createClause(S);
+				S.num_clau ++;		
+ 				for(int i = 0;i < 9;i ++){
 						
-// 			        LITERAL *newLiteral = (LITERAL *)malloc(sizeof(LITERAL));
-// 			        newLiteral->next = NULL;        
-// 			        newLiteral->value = temp[i]; 
+ 			        LITERAL *newLiteral = (LITERAL *)malloc(sizeof(LITERAL));
+ 			        newLiteral->next = NULL;        
+ 			        newLiteral->value = temp[i]; 
 			        
-// 			        buildLitsheet(ans, S.tail, temp[i]);
+ 			        buildLitsheet(ans, S.tail, temp[i]);
 			        
-// 			        temp[i] += (j == 8) ? 19 : 1;				//	为 j 下一轮以及下一个col循环做准备
+ 			        temp[i] += (j == 8) ? 19 : 1;				//	为 j 下一轮以及下一个col循环做准备
 						
-// 					if(S.tail->lit == NULL) {
-// 			            S.tail->lit = newLiteral;
-// 			        } else {
-// 			            LITERAL *lastLit = S.tail->lit;
-// 			            newLiteral->next = lastLit;
-// 			            S.tail->lit = newLiteral; 
-// 			        }
+ 					if(S.tail->lit == NULL) {
+ 			            S.tail->lit = newLiteral;
+ 			        } else {
+ 			            LITERAL *lastLit = S.tail->lit;
+ 			            newLiteral->next = lastLit;
+ 			            S.tail->lit = newLiteral; 
+ 			        }
 						
-// 				}
-// 				S.tail->num = 9;									
-// 			} 
-			
-// 		} 
+ 				}
+ 				S.tail->num = 9;									
+ 			} 		
+ 		} 
 		
-// 		//	为下一行初始化辅助数组 
-// 		temp[0] = temp[8] - 18;//-19+1
-// 		for(int i = 1;i < 9;i ++){
-// 			temp[i] = temp[i - 1] + ((i % 3 == 0) ? 63 : 9);
-// 		}
-// 	}	
-// 	S.num_clau += 2997;
+ 		//	为下一行初始化辅助数组 
+ 		temp[0] = temp[8] - 18;//-19+1
+ 		for(int i = 1;i < 9;i ++){
+ 			temp[i] = temp[i - 1] + ((i % 3 == 0) ? 63 : 9);
+ 		}
+ 	}	
 
-// 	return true; 
-// }
 
-// bool percentConsCNF(CNF &S, LITSHEET *ans)
-// //2.	将反对角线、窗口限制转化为CNF(total 999)
-// {
-// 	if(!S.num_clau || !S.head) return false;
+ 	return true; 
+ }	
+
+
+ bool percentConsCNF(CNF &S, LITSHEET *ans)
+ //2.	将反对角线、窗口限制转化为CNF(total 999)
+ //和前面加起来9990（没有格约束） 
+ {
+ 	if(!S.num_clau || !S.head) return false;
 	
-// 	int temp[9];	temp[0] = 73;
-// 	for(int i = 1;i < 9;i++)	temp[i] = temp[i - 1] + 72; 
-// //反对角线约束
-// 	for(int j = 0;j < 9;j ++){
-// 		//不能重复j 
-// 		for(int i = 0; i < 9; i++){
-// 			for(int k = i + 1;k < 9; k++){
-// 				createClause(S);
-// 				LITERAL *a = (LITERAL *)malloc(sizeof(LITERAL)), *b = (LITERAL *)malloc(sizeof(LITERAL));
-// 				a->next = NULL;	b->next = NULL;
-// 				a->value = -temp[i];b->value = -temp[k];
+ 	int temp[9];	temp[0] = 73;
+ 	for(int i = 1;i < 9;i++)	temp[i] = temp[i - 1] + 72; 
+ //反对角线约束	333
+ 	for(int j = 0;j < 9;j ++){
+ 		//不能重复j 
+ 		for(int i = 0; i < 9; i++){
+ 			for(int k = i + 1;k < 9; k++){
+ 				createClause(S);
+ 				S.num_clau ++;
+ 				LITERAL *a = (LITERAL *)malloc(sizeof(LITERAL)), *b = (LITERAL *)malloc(sizeof(LITERAL));
+ 				a->next = NULL;	b->next = NULL;
+ 				a->value = -temp[i];b->value = -temp[k];
 				
-// 				S.tail->lit = a;
-// 				a->next = b;
-// 				S.tail->num = 2;
+ 				S.tail->lit = a;
+ 				a->next = b;
+ 				S.tail->num = 2;
 				
-// 				buildLitsheet(ans, S.tail, -temp[i]);
-// 				buildLitsheet(ans, S.tail, -temp[k]);				
-// 			}
-// 		}
-// 		//反对角线有j	
-// 		createClause(S);		
-// 		for(int i = 0;i < 9;i ++){
+ 				buildLitsheet(ans, S.tail, -temp[i]);
+ 				buildLitsheet(ans, S.tail, -temp[k]);				
+ 			}
+ 		}
+ 		//反对角线有j	
+ 		createClause(S);
+		S.num_clau ++;		
+ 		for(int i = 0;i < 9;i ++){
 				
-// 	        LITERAL *newLiteral = (LITERAL *)malloc(sizeof(LITERAL));
-// 	        newLiteral->next = NULL;        
-// 	        newLiteral->value = temp[i]; 
+ 	        LITERAL *newLiteral = (LITERAL *)malloc(sizeof(LITERAL));
+ 	        newLiteral->next = NULL;        
+ 	        newLiteral->value = temp[i]; 
 	        
-// 	        buildLitsheet(ans, S.tail, temp[i]);
+ 	        buildLitsheet(ans, S.tail, temp[i]);
 	        
-// 	        temp[i] += 1;				//	为 j 下一轮循环做准备
+ 	        temp[i] += 1;				//	为 j 下一轮循环做准备
 				
-// 			if(S.tail->lit == NULL) {
-// 	            S.tail->lit = newLiteral;
-// 	        } else {
-// 	            LITERAL *lastLit = S.tail->lit;
-// 	            newLiteral->next = lastLit;
-// 	            S.tail->lit = newLiteral; 
-// 	        }
+ 			if(S.tail->lit == NULL) {
+ 	            S.tail->lit = newLiteral;
+ 	        } else {
+ 	            LITERAL *lastLit = S.tail->lit;
+ 	            newLiteral->next = lastLit;
+ 	            S.tail->lit = newLiteral; 
+ 	        }
 				
-// 		}
-// 		S.tail->num = 9;	
-// 	} 
-// 	S.num_clau += 333;
-// //窗口限制				 
+ 		}
+ 		S.tail->num = 9;	
+ 	} 
 
-// 	temp[0] = 91;
-// 	for(int i = 1;i < 9;i ++){
-// 		temp[i] = temp[i - 1] + ((i % 3 == 0) ? 63 : 9);
-// 	}	
+ //窗口限制		333			 
 
-// 	for(int window = 0; window < 2; window ++){
-// 		for(int j = 0;j < 9;j ++){
-// 			//不能重复j 
-// 			for(int i = 0; i < 9; i++){
-// 				for(int k = i + 1;k < 9; k++){
-// 					createClause(S);
-// 					LITERAL *a = (LITERAL *)malloc(sizeof(LITERAL)), *b = (LITERAL *)malloc(sizeof(LITERAL));
-// 					a->next = NULL;	b->next = NULL;
-// 					a->value = -temp[i];b->value = -temp[k];
+ 	temp[0] = 91;
+ 	for(int i = 1;i < 9;i ++){
+ 		temp[i] = temp[i - 1] + ((i % 3 == 0) ? 63 : 9);
+ 	}	
+
+ 	for(int window = 0; window < 2; window ++){
+ 		for(int j = 0;j < 9;j ++){
+ 			//不能重复j 
+ 			for(int i = 0; i < 9; i++){
+ 				for(int k = i + 1;k < 9; k++){
+ 					createClause(S);
+ 					S.num_clau ++;
+ 					LITERAL *a = (LITERAL *)malloc(sizeof(LITERAL)), *b = (LITERAL *)malloc(sizeof(LITERAL));
+ 					a->next = NULL;	b->next = NULL;
+ 					a->value = -temp[i];b->value = -temp[k];
 					
-// 					S.tail->lit = a;
-// 					a->next = b;
-// 					S.tail->num = 2;
+ 					S.tail->lit = a;
+ 					a->next = b;
+ 					S.tail->num = 2;
 					
-// 					buildLitsheet(ans, S.tail, -temp[i]);
-// 					buildLitsheet(ans, S.tail, -temp[k]);					
-// 				}
-// 			}
-// 			//反对角线有j	
-// 			createClause(S);		
-// 			for(int i = 0;i < 9;i ++){
+ 					buildLitsheet(ans, S.tail, -temp[i]);
+ 					buildLitsheet(ans, S.tail, -temp[k]);					
+ 				}
+ 			}
+ 			//反对角线有j	
+ 			createClause(S);
+			S.num_clau ++;		
+ 			for(int i = 0;i < 9;i ++){
 					
-// 		        LITERAL *newLiteral = (LITERAL *)malloc(sizeof(LITERAL));
-// 		        newLiteral->next = NULL;        
-// 		        newLiteral->value = temp[i];
+ 		        LITERAL *newLiteral = (LITERAL *)malloc(sizeof(LITERAL));
+ 		        newLiteral->next = NULL;        
+ 		        newLiteral->value = temp[i];
 		        
-// 				buildLitsheet(ans, S.tail, temp[i]); 
+ 				buildLitsheet(ans, S.tail, temp[i]); 
 				
-// 		        temp[i] += (j == 8) ? 352 : 1;				//	为 j 下一轮循环做准备
+ 		        temp[i] += (j == 8) ? 352 : 1;				//	为 j 下一轮循环做准备
 					
-// 				if(S.tail->lit == NULL) {
-// 		            S.tail->lit = newLiteral;
-// 		        } else {
-// 		            LITERAL *lastLit = S.tail->lit;
-// 		            newLiteral->next = lastLit;
-// 		            S.tail->lit = newLiteral; 
-// 		        }
+ 				if(S.tail->lit == NULL) {
+ 		            S.tail->lit = newLiteral;
+ 		        } else {
+ 		            LITERAL *lastLit = S.tail->lit;
+ 		            newLiteral->next = lastLit;
+ 		            S.tail->lit = newLiteral; 
+ 		        }
 					
-// 			}
-// 			S.tail->num = 9;	
-// 		} 
-// 		S.num_clau += 333;	
-// 	} 
+ 			}
+ 			S.tail->num = 9;	
+ 		} 
+ 	} 
 
-// 	return true;// 共12987个子句 
-// }
+ 	return true;// 共12987个子句 
+ }
 
-// int ijk_cnf(int ijk)
-// //3.	棋盘信息转化为cnf变量 
-// {
-// 	int cnf = 0;	bool minus = false;
-// 	if(ijk < 0)	minus = true;
-// 	ijk = abs(ijk); 
+ int ijk_cnf(int ijk)
+ //3.	棋盘信息转化为cnf变量 
+ {
+ 	int cnf = 0;	bool minus = false;
+ 	if(ijk < 0)	minus = true;
+ 	ijk = abs(ijk); 
 	
-// 	cnf += (ijk/100 - 1)  *81 ;
-// 	ijk %= 100;
-// 	cnf += (ijk/10 - 1)	*9;
-// 	ijk %= 10;
-// 	cnf += ijk;
+ 	cnf += (ijk/100 - 1)  *81 ;
+ 	ijk %= 100;
+ 	cnf += (ijk/10 - 1)	*9;
+ 	ijk %= 10;
+ 	cnf += ijk;
 	
-// 	if(minus)	cnf *= -1;
-	
-// 	return cnf;
-// }
+ 	if(minus)	cnf *= -1;
+ 	return cnf;
+ }
 
-// int cnf_ijk(int cnf)
-// //4.	逆变换 
-// {
-// 	int ijk = 0;	bool minus = false;
-// 	if(cnf < 0)	minus = true;
-// 	cnf = abs(cnf); 
-//     int devide[2] = {81, 9};
+ int cnf_ijk(int cnf)
+ //4.	逆变换 
+ {
+ 	int ijk = 0;	bool minus = false;
+ 	if(cnf < 0)	minus = true;
+ 	cnf = abs(cnf); 
+     int devide[2] = {81, 9};
     
-//     for(int i = 0; i < 2; ++i){
-//         if(cnf % devide[i] != 0){
-//             ijk += (cnf / devide[i] + 1) * (i == 0 ? 100 :  10 );
-//             cnf %= devide[i];
-//         } else {
-//             ijk += (cnf / devide[i]) * (i == 0 ? 100 : 10);
-//             cnf = devide[i];
-//         }
-//     }
+     for(int i = 0; i < 2; ++i){
+         if(cnf % devide[i] != 0){
+             ijk += (cnf / devide[i] + 1) * (i == 0 ? 100 :  10 );
+             cnf %= devide[i];
+         } else {
+             ijk += (cnf / devide[i]) * (i == 0 ? 100 : 10);
+             cnf = devide[i];
+         }
+     }
 
-// 	ijk += cnf;
+ 	ijk += cnf;
 	
-// 	if(minus)	ijk *= -1;
+ 	if(minus)	ijk *= -1;
 	
-// 	return ijk;
-// }
+ 	return ijk;
+ }
 
-// int randomNum(int *value)
-// //5.	根据指令生成位置的随机值
-// {
-// 	int range, ret;
-// 	//	位置 0-80
-// 	ret = rand() % 81;
-// 	//	值 1-9
-// 	*value = rand() % 9 + 1;
+ int randomNum(int *value)
+ //5.	根据指令生成位置的随机值
+ {
+ 	int range, ret;
+ 	//	位置 0-80
+ 	ret = rand() % 81;
+ 	//	值 1-9
+ 	*value = rand() % 9 + 1;
 	
-// 	return ret;	
-// } 
+ 	return ret;	
+ } 
 
-// void addUnitClause(CNF &S, int value,LITSHEET * ans)
-// //6.	头部增加单子句作为填数 
-// {
-// 	LITERAL *lit = (LITERAL *)malloc(sizeof(LITERAL));
-// 	lit->next = NULL;
-// 	lit->value =value;
+ void addUnitClause(CNF &S, int value,LITSHEET * ans)
+ //6.	头部增加单子句作为填数 
+ {
+ 	LITERAL *lit = (LITERAL *)malloc(sizeof(LITERAL));
+ 	lit->next = NULL;
+ 	lit->value =value;
 	
-//     CLAUSE *newClause = (CLAUSE *)malloc(sizeof(CLAUSE));
-//     newClause->lit = lit;
-//     newClause->num = 1;
-//     newClause->isTrue = false;
-//     newClause->next = S.head;
+     CLAUSE *newClause = (CLAUSE *)malloc(sizeof(CLAUSE));
+     newClause->lit = lit;
+     newClause->num = 1;
+     newClause->isTrue = false;
+     newClause->next = S.head;
     
-//     S.head = newClause;
-// 	S.num_clau ++;
+     S.head = newClause;
+ 	 S.num_clau ++;
 	
-// 	int index = abs(value);
-// 	INFO_L *info_lit = (INFO_L *)malloc (sizeof(INFO_L));
-// 	info_lit->clause = S.head;
-// 	info_lit->next = NULL;
+ 	int index = abs(value);
+ 	INFO_L *info_lit = (INFO_L *)malloc (sizeof(INFO_L));
+ 	info_lit->clause = S.head;
+ 	info_lit->next = NULL;
 	
-// 	if(value > 0){
-// 		if(!ans[index].pos){
-// 			ans[index].pos = info_lit;
-// 		}
-// 		else{
-// 			info_lit->next = ans[index].pos;
-// 			ans[index].pos = info_lit;
-// 		}
-// 	}else{
-// 		if(!ans[index].nag){
-// 			ans[index].nag = info_lit;
-// 		}
-// 		else{
-// 			info_lit->next = ans[index].nag;
-// 			ans[index].nag = info_lit;
-// 		}		
-// 	}
+ 	if(value > 0){
+ 		if(!ans[index].pos){
+ 			ans[index].pos = info_lit;
+ 		}
+ 		else{
+ 			info_lit->next = ans[index].pos;
+ 			ans[index].pos = info_lit;
+ 		}
+ 	}else{
+ 		if(!ans[index].nag){
+ 			ans[index].nag = info_lit;
+ 		}
+ 		else{
+ 			info_lit->next = ans[index].nag;
+ 			ans[index].nag = info_lit;
+ 		}		
+ 	}
 	
-// }
+ }
 
-// bool deleteS_head(CNF &S,LITSHEET * ans)
-// //7.	删掉开头子句便于回溯 
-// {
-// 	if(! S.head){
-// 		printf("CNF empty !Can't delete head!\n");
-// 		return false;
-// 	}	
-// 	if(S.head->num != 1){
-// 		printf("head has more than one lit! ERROR\n");
-// 		return false; 
-// 	}
-// 	int value = S.head->lit->value;  
-// 	CLAUSE *base = S.head->next;
-// 	free(S.head);
+ bool deleteS_head(CNF &S,LITSHEET * ans)
+ //7.	删掉开头子句便于回溯 
+ {
+ 	if(! S.head){
+ 		printf("CNF empty !Can't delete head!\n");
+ 		return false;
+ 	}	
+ 	if(S.head->num != 1){
+ 		printf("head has more than one lit! ERROR\n");
+ 		return false; 
+ 	}
+ 	int value = S.head->lit->value;  
+ 	CLAUSE *base = S.head->next;
+ 	free(S.head);
 	
-// 	S.head = base;
-// 	S.num_clau --;
-// 	//	由于是首插法，所以删第一个就可以了 
+ 	S.head = base;
+ 	S.num_clau --;
+ 	//	由于是首插法，所以删第一个就可以了 
 	
-// 	if(value > 0){
-// 		INFO_L *lit = ans[value].pos;
+ 	if(value > 0){
+ 		INFO_L *lit = ans[value].pos;
 		
-// 		if(!lit){
-// 			printf("ERROR ! find no lit! can't update ans\n");
-// 			return false;
-// 		}
-// 		else{	
-// 			ans[value].pos = lit->next;
-// 			free(lit);
-// 		}
+ 		if(!lit){
+ 			printf("ERROR ! find no lit! can't update ans\n");
+ 			return false;
+ 		}
+ 		else{	
+ 			ans[value].pos = lit->next;
+ 			free(lit);
+ 		}
 		
-// 	}else{
-// 		INFO_L *lit = ans[-value].nag;
+ 	}else{
+ 		INFO_L *lit = ans[-value].nag;
 		
-// 		if(!lit){
-// 			printf("ERROR ! find no lit! can't update ans\n");
-// 			return false;
-// 		}
-// 		else{
-// 			ans[-value].nag = lit->next;
-// 			free(lit);
-// 		}		
-// 	}	
+ 		if(!lit){
+ 			printf("ERROR ! find no lit! can't update ans\n");
+ 			return false;
+ 		}
+ 		else{
+ 			ans[-value].nag = lit->next;
+ 			free(lit);
+ 		}		
+ 	}	
 
-// 	return true;
-// }
-
-// bool DFS_board(/*FILE *test,*/int row, int col, int cnt,  stack <INFO_C> &op_clau, CNF &S, int board[N][N],LITSHEET * ans)
-// //8.通过给出的数进行DFS生成终盘 
-// {
-// 	if(cnt == 81)	return true;	//	已填满
+ 	return true;
+ }
+ 
+ bool DFS_board(int row, int col, int cnt, CNF &S, int board[N][N],LITSHEET * ans)
+ //8.通过给出的数进行DFS生成终盘 
+ {
+ 	if(cnt == 81)	return true;	//	已填满
 	 
-// 	int value, i, j;
-// 	bool flag = false;
-	
-// 	for(i = row; i < N; i ++){
-// 		for(j = col; j < N;j ++){
-// 			if(!board[i][j])	break;
-// 		}
-// 	}			// 找到第一个空位处 
-			
+ 	int value, i, j;
+ 	bool flag = false;
+ 	bool prun = false;
+	// 找到第一个空位处	
+ 	for(i = row; i < N; i ++){
+ 		for(j = col; j < N;j ++){
+ 			if(board[i][j] == 0){
+ 				flag = true;
+ 				break;
+			 }	
+ 		}
+ 		if(flag)	break;
+ 	}			 
+ 	flag = false;
+ 	
+ 	//构建 1-9随机数组 
+	int ran_arr[9]={0}, ran;
+	for(int t = 1;t < 10;t ++){
+		ran = rand() % 9;
+		while(ran_arr[ran] ) ran = (ran + 1)% 9;
+			ran_arr[ran] = t;
+	}	
+//	for(int t = 0;t < 9;t++)	printf("%d ",ran_arr[t]);		
 
-// 	for(int k = 1; k < 10;k ++){
-// 		board[i][j] = k;
-// 		value = ijk_cnf((i+1)*100 + (j+1)*10 + k);	//棋盘位置加填的数转化为cnf变元的值 
-// 		addUnitClause(S, value, ans);
-		
-// 		/*CNF newS;	initCNF(newS);
-// 		makecopy(newS, S); */
-		
-// 		if(DPLL(op_clau, S, ans/*,test*/)){
+ 	for(int t = 0;t < 9;t ++){
+ 		int k = ran_arr[t];
+ 		
+ 		for(int r = 0;r < N;r++){ 
+ 			if(board[i][r] == k){
+ 				prun = true;
+				break; 
+			 }
+		 }	
+		if(prun){
+			prun = false;
+			continue;
+		}
+		for(int c = 0;c < N;c++){ 
+ 			if(board[c][j] == k){
+ 				prun = true;
+				break; 
+			 }
+		 }
+		if(prun){
+			prun = false;
+			continue;
+		}
+	    for (int r = 0; r < BOX_SIZE; r++) {
+	        for (int c = 0; c < BOX_SIZE; c++) {
+	        	int box_row = i - i % BOX_SIZE;
+	    		int box_col = j - j % BOX_SIZE;
+	            if (board[box_row + r][box_col + c] == k) {
+	                prun = true;
+	                break;
+	            }
+	        }
+	        if(prun)	break;
+	    }
+		if(prun){
+			prun = false;
+			continue;
+		}		 	
 			
-// 			for(int ii = 0;ii <= SUDOKU_VAR; ii++)	ans[ii].ans = 0;		//	若为true，ans将不会清零
+ 		board[i][j] = k;
+ 		value = ijk_cnf((i+1)*100 + (j+1)*10 + k);	//棋盘位置加填的数转化为cnf变元的值 
+ 		
+		addUnitClause(S, value, ans);
+ 		Output_CNF(S);
+ 		
+ 		if(DPLL(S, ans)){
+//			showBoard(board);
+ 			for(int ii = 0;ii <= SUDOKU_VAR; ii++)	ans[ii].ans = 0;		//	若为true，ans将不会清零
 			 
-// 			flag =  DFS_board(/*test,*/i + (j + 1)/9, (j + 1)%9, cnt + 1,op_clau,S,board,ans);
+ 			flag =  DFS_board(i + (j + 1)/9, (j + 1)%9, cnt + 1, S,board,ans);
 			
-// 			if(flag)	return true;
-// 		}
-// 		//	DPLL或DFS失败
+ 			if(flag)	return true;
+ 		}
+ 		//	DPLL或DFS失败
 
-// 		deleteS_head(S, ans);
-// 	}
+ 		deleteS_head(S, ans);
+ 		Output_CNF(S);
+ 	}
+		Output_CNF(S);
+ 		board[i][j] = 0; 
+// 		showBoard(board);
+
+ 	return false;	
+ }
+
+
+
+ bool generate(CNF &S, int board[N][N], LITSHEET* ans)
+ //9.	通过拉斯维加斯算法生成终盘
+ {
+ 	int i = 0, j = 0, t, cnt = INIT_NUM, value = 0, *p_value = &value;
+ 	bool btemp = false;
+	
+ // Las Vagas随机选13个位置并随机选数 
+ 	while(cnt){
+ 		t = randomNum(p_value);
+ 		i = t / 9;
+ 		j = t % 9;
+ 		if(board[i][j] != 0)	continue;	//该位置已经填入过，可省去格约束 
+	
+ 		t = ijk_cnf((i + 1)* 100 + (j + 1)* 10 + value);
+
+ 		addUnitClause(S, t, ans);
+ 		if(cnt == INIT_NUM){
+ 			board[i][j] = value;
+ 			cnt --;
+ 			continue;
+		 }
+
+ 		btemp = DPLL(S, ans);	
 		
-// 		board[i][j] = 0; 
+ 		if(btemp){
+ 			board[i][j] = value;
+ 			cnt --;
+ 			for(int ii = 0;ii <= SUDOKU_VAR; ii++)	ans[ii].ans = 0;		//清零ans 
+ 		}else{
+ 			//	如果回溯不了就报错 
+ 			if(!deleteS_head(S, ans)){
+ 				printf("ERROR in delete_head, can't backtrace\n");
+ 				break;
+ 			}	
+ 		}	
+ 	/*	printf("check info :cnt = %d\nS.num_clau = %d\n",cnt,S.num_clau);
+ 		showClause(S.tail);printf("\n");*/
+ 	}
 
-// 	return false;	
-// }
+ 	if(cnt != 0){
+ 		printf("Las Vagas Alo FAILED\n");
+ 		return false;
+ 	}		
+	printf("Las Vagas Alo SUCCESS with %d items!\n",INIT_NUM);
+	showBoard(board);
+ //	生成完整终盘 
+ 	if(DFS_board( 0, 0, INIT_NUM, S, board, ans)){
+ 		printf("生成终盘成功，Congratulations!\n");
+ 		showBoard (board);
+ 	}else{
+ 		printf("生成终盘失败\n");
+ 		return false;
+ 	}
+	
+ 	return true; 
+  } 
 
-// bool generate(/*FILE *test,*/ stack <INFO_C> &op_clau, CNF &S, int board[N][N], LITSHEET* ans)
-// //9.	通过拉斯维加斯算法生成终盘
-// {
-// 	int i = 0, j = 0, t, cnt = 13, value = 0, *p_value = &value;
-// 	bool btemp = false;
-	
-// // Las Vagas随机选13个位置并随机选数 
-// 	while(cnt){
-// //		t = randomNum(p_value);
-// //		i = t / 9;
-// //		j = t % 9;
-// //		if(board[i][j])	continue;	//该位置已经填入过，可省去格约束 
-// //		
-// //		t = ijk_cnf((i + 1)* 100 + (j + 1)* 10 + value);
-// 		if(cnt == 13)	t = 10;
-// 		if(cnt == 12)	t = 88;
-// 		if(cnt == 11)	t = 96;
-// 		addUnitClause(S, t, ans);
-// 		/*// 不好复原，所以直接传入副本
-// 		initCNF(newS, SUDOKU_VAR);
-// 		makecopy(newS, S);*/
-		
-// 		btemp = DPLL( op_clau, S, ans/*,test*/);
-// 		check(ans, 729);
-// //test		
-// 		for(int ii = 1;ii <= 729; ii++){
-// 			int cnt1 = 0;
-// 			INFO_L *pos = ans[ii].pos, *nag = ans[ii].nag;
-// 			while(pos){
-// 				cnt1 ++;
-// 				pos = pos->next;
-// 			}
-// 			if(cnt1)		printf("var %d occur in %d clause\n",ii,cnt);
-			
-// 			cnt1 = 0;
-// 			while(nag){
-// 				cnt1 ++;
-// 				nag = nag->next;
-// 			}		
-// 			if(cnt1)		printf("var %d occur in %d clause\n\n",-ii,cnt);
-	
-// 		}		
-// //testend		
-		
-		
-// 		if(btemp){
-// 			board[i][j] = value;
-// 			cnt --;
-// 			Output_CNF(S);
-// 			showLitsheet(ans,729);
-// 		}else{
-// 			if(!deleteS_head(S, ans)){
-// //				showCNF(S);
-// 				printf("ERROR\n");
-// 				break;
-// 			}	
-// 		}
-	
-// 	/*	printf("check info :cnt = %d\nS.num_clau = %d\n",cnt,S.num_clau);
-// 		showClause(S.tail);printf("\n");*/
-// 	}
-	
-// 	if(cnt != 0){
-// 		printf("Las Vagas Alo FAILED\n");
-// 		return false;
-// 	}		
-	
-// //	生成完整终盘 
-// 	if(DFS_board(/*test,*/ 0, 0, 13,op_clau,S,board,ans)){
-// 		printf("生成终盘成功\n");
-// 		showBoard (board);
-// 	}else{
-// 		printf("生成终盘失败\n");
-// 	}
-	
-// 	return true; 
-//  } 
-
-// /*
-// 每次传入一个副本，并clear 
-// */
+bool dig_holes(CNF &S, int board[N][N], LITSHEET *ans)
+//10. 挖洞法生成数独游戏 
+{
+	return false;
+}
 
 
-
-// void showBoard(int board[N][N])
-// //20.
-// {
-//     printf("    1   2   3   4   5   6   7   8   9\n");
-//     printf("  ╔═══╤═══╤═══╦═══╤═══╤═══╦═══╤═══╤═══╗\n");//开头2个空格
+void showBoard(int board[N][N])
+ //20.
+ {
+     printf("    1   2   3   4   5   6   7   8   9\n");
+     printf("  ╔═══╤═══╤═══╦═══╤═══╤═══╦═══╤═══╤═══╗\n");//开头2个空格
     
-//     for(int i = 0; i < N; i++) {
+     for(int i = 0; i < N; i++) {
 
-//         printf("%d ║",i+1);
+         printf("%d ║",i+1);
         
-//         for(int j = 0; j < N; j++) {
-//             // 0显示为空格
-//             if(board[i][j] == 0) {
-//                 printf("   ");
-//             } else {
-//                 printf(" %d ", board[i][j]);
-//             }
+         for(int j = 0; j < N; j++) {
+             // 0显示为空格
+             if(board[i][j] == 0) {
+                 printf("   ");
+             } else {
+                 printf(" %d ", board[i][j]);
+             }
 
-//             if(j == 8) {
-//                 printf("║");
-//             } else if(j % 3 == 2) {
-//                 printf("║");
-//             } else {
-//                 printf("│");
-//             }
-//         }
-//         printf("\n");
+             if(j == 8) {
+                 printf("║");
+             } else if(j % 3 == 2) {
+                 printf("║");
+             } else {
+                 printf("│");
+             }
+         }
+         printf("\n");
 
-//         if(i == 8) {
-//             printf("  ╚═══╧═══╧═══╩═══╧═══╧═══╩═══╧═══╧═══╝\n");
-//         } else if(i % 3 == 2) {
-//             printf("  ╠═══╪═══╪═══╬═══╪═══╪═══╬═══╪═══╪═══╣\n");
-//         } else {
-//             printf("  ╟───┼───┼───╫───┼───┼───╫───┼───┼───╢\n");
-//         }
-//     }
-// }
+         if(i == 8) {
+             printf("  ╚═══╧═══╧═══╩═══╧═══╧═══╩═══╧═══╧═══╝\n");
+         } else if(i % 3 == 2) {
+             printf("  ╠═══╪═══╪═══╬═══╪═══╪═══╬═══╪═══╪═══╣\n");
+         } else {
+             printf("  ╟───┼───┼───╫───┼───┼───╫───┼───┼───╢\n");
+         }
+     }
+ }
 
-// void Output_CNF(CNF &S)
-// //15.
-// {
-// 	FILE *fp = fopen("CNF_output.cnf","w");
-// 	if(!fp){
-// 		printf("ERROR cannot output to 'CNF_output'");
-// 	}
-// //	showCNF(S,fp);
-// 	time_t now = time(NULL);
-//     fprintf(fp,"c Created Time: %sp cnf %d %d\n", ctime(&now), S.num_var, S.num_clau);
-//     CLAUSE *curr = S.head;
+void Output_CNF(CNF &S)
+ //.将cnf输出到CNF_output文件中 
+ {
+ 	FILE *fp = fopen("CNF_output.cnf","w");
+ 	if(!fp){
+ 		printf("ERROR cannot output to 'CNF_output'");
+ 	}
+ //	showCNF(S,fp);
+ 	time_t now = time(NULL);
+     fprintf(fp,"c Created Time: %sp cnf %d %d\n", ctime(&now), S.num_var, S.num_clau);
+     CLAUSE *curr = S.head;
     
-//     while(curr){
-//         LITERAL *lit = curr->lit;
-//         while(lit) {
-//             fprintf(fp,"%d ", lit->value);
-//             lit = lit->next;
-//         }
-//         fprintf(fp,"0\r");
+     while(curr){
+         LITERAL *lit = curr->lit;
+         while(lit) {
+             fprintf(fp,"%d ", lit->value);
+             lit = lit->next;
+         }
+         fprintf(fp,"0\n");
 
-//         curr = curr->next;
-//     }
+         curr = curr->next;
+     }
     
-// 	fclose(fp);
-// }
+ 	fclose(fp);
+ }
 
 /*#include <stdio.h>
 #include <stdlib.h>
