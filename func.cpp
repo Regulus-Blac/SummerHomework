@@ -3,7 +3,7 @@
 //#define CHECK
 /*构建动态数组 部分 */
 void InitList(SqList& L)
-// 1.线性表L不存在，构造一个空的线性表，返回OK，否则返回INFEASIBLE。
+// 1.1线性表L不存在，构造一个空的线性表，返回OK，否则返回INFEASIBLE。
 {
 	L.elem = (PCLAUSE *)malloc(sizeof(PCLAUSE) * LIST_INIT_SIZE);
 	if(!L.elem){
@@ -16,7 +16,7 @@ void InitList(SqList& L)
 	L.listsize = LIST_INIT_SIZE;
 }
 void InitBack(SqBack &L)
-// 1.
+// 1.2
 {
 	L.elem = (int *)malloc(sizeof(int) * MAX_BACK);
 	if(!L.elem){
@@ -31,7 +31,7 @@ void InitBack(SqBack &L)
 	L.listsize = MAX_BACK;
 }
 status DestroyList(SqList& L)
-// 2.如果线性表L存在，销毁线性表L，释放数据元素的空间，返回OK，否则返回INFEASIBLE。
+// 2.1如果线性表L存在，销毁线性表L，释放数据元素的空间，返回OK，否则返回INFEASIBLE。
 {
 	if(!L.elem) return INFEASIBLE;
 
@@ -43,7 +43,7 @@ status DestroyList(SqList& L)
 	return OK;
 }
 status DestroyBack(SqBack& L)
-// 2.
+// 2.2
 {
 	if(!L.elem) return INFEASIBLE;
 
@@ -55,7 +55,7 @@ status DestroyBack(SqBack& L)
 	return OK;
 }
 status ClearList(SqList& L)
-// 3.如果线性表L存在，删除线性表L中的所有元素并重置，返回OK，否则返回INFEASIBLE。
+// 3.1如果线性表L存在，删除线性表L中的所有元素并重置，返回OK，否则返回INFEASIBLE。
 {
     if(!L.elem) return INFEASIBLE;
 
@@ -68,7 +68,7 @@ status ClearList(SqList& L)
     return OK;
 }
 status ClearBack(SqBack& L)
-// 3.
+// 3.2
 {
     if(!L.elem) return INFEASIBLE;
 
@@ -81,7 +81,7 @@ status ClearBack(SqBack& L)
     return OK;
 }
 status ListInsert(SqList &L, CLAUSE *node)
-// 4.如果线性表L存在，将元素node插入到线性表L的末尾，返回OK；当插入位置不正确时，返回ERROR；如果线性表L不存在，返回INFEASIBLE。
+// 4.1如果线性表L存在，将元素node插入到线性表L的末尾，返回OK；当插入位置不正确时，返回ERROR；如果线性表L不存在，返回INFEASIBLE。
 {
 	if (!L.elem) {
 		printf( "ListInsert: L.elem is NULL (maybe destroyed)\n");
@@ -121,7 +121,7 @@ status ListInsert(SqList &L, CLAUSE *node)
     return TRUE;
 }
 status BackInsert(SqBack &L, int node)
-// 4.
+// 4.2
 {
 	if (!L.elem) {
 		printf("ListInsert: L.elem is NULL (maybe destroyed)\n");
@@ -163,29 +163,63 @@ status BackInsert(SqBack &L, int node)
 
 /*DPLL 部分 1-26  共22个关键函数*/
 
-void makecopy(CNF &newS,const CNF &S) 
-//1.将S拷贝到newS (比操作栈要费时费空间，不过直观)
+//void makecopy(CNF &newS, CNF &S) 
+////0.没有用到
+//{
+//	if(newS.head || newS.tail){
+//
+//     	CLAUSE *current = newS.head;
+//        while (current != NULL) {
+//            CLAUSE *nextClause = current->next;
+//            LITERAL *currentLit = current->lit;
+//            while (currentLit != NULL) {
+//                LITERAL *nextLit = currentLit->next;
+//                free(currentLit);
+//                currentLit = nextLit;
+//            }
+//            free(current);
+//            current = nextClause;
+//        }
+//
+//	    newS.head = NULL;
+//	    newS.tail = NULL;
+//	    newS.num_clau = 0;
+//	    newS.num_var = 0;
+//	    newS.exist_emptyclause = false;				
+//	}							//	先释放旧的再复制新的
+//	 
+//	newS.num_clau = S.num_clau;
+//	newS.num_var = S.num_var;
+//	newS.exist_emptyclause = S.exist_emptyclause;
+//	
+//	createClause(newS);
+//	CLAUSE *node = S.head;
+//	for(int i = 0;i < newS.num_clau; i++){
+//		CLAUSE *nnode = newS.tail;
+//		nnode->isTrue = node->isTrue;
+//		nnode->num = node->num;
+//		nnode->lit = node->lit;
+//		node = node->next;
+//		// lit不会删，所以副本地址可以不变，唯一变的就是clause的地址即可 
+//		if(i != newS.num_clau - 1){
+//			createClause(newS);
+//			nnode->next = newS.tail;	
+//		}
+//		
+//	}
+//}
+int num_trueclau(CNF &S)
+//1.统计真子句个数 
 {
-	newS.num_clau = S.num_clau;
-	newS.num_var = S.num_var;
-	newS.exist_emptyclause = S.exist_emptyclause;
-	
-	createClause(newS);
-	for(int i = 0;i < newS.num_clau; i++){
-		CLAUSE *node = newS.tail;
-		node->isTrue = S.tail->isTrue;
-		node->num = S.tail->num;
-		node->lit = S.tail->lit;
+	CLAUSE *clause = S.head;
+	int cnt = 0;
+	while(clause){
+		if(clause->isTrue == true)	cnt ++;
 		
-		// lit不会删，所以副本地址可以不变，唯一变的就是clause的地址即可 
-		if(i != newS.num_clau - 1){
-			createClause(newS);
-			node->next = newS.tail;	
-		}
-		
-	}
+		clause = clause->next;
+	} 
+	return cnt;
 }
-
 void initCNF(CNF &S, int var)
 //2.初始化 
 {
@@ -215,6 +249,19 @@ void clearCNF(CNF &S,LITSHEET* ans)
     }
      
     for(int i = 0;i <= S.num_var; i++){
+    	INFO_L *p = ans[i].pos,*next = p;
+    	while(p){
+    		next = p->next;
+    		free(p);
+    		p = next;
+		}
+		p = ans[i].nag;	next = p;
+    	while(p){
+    		next = p->next;
+    		free(p);
+    		p = next;
+		}
+				
  		ans[i].ans = 0;
  		ans[i].pos = NULL;
  		ans[i].nag = NULL;
@@ -501,7 +548,7 @@ CLAUSE *locatePre(CLAUSE *node,CLAUSE *head)
 }
 
 int deleteOneClause(CLAUSE *node, SqList &L, CNF &S, LITSHEET* ans) 
-//15.删除单子句，将指针标记改为true，存真子句地址于数组中，返回单子句中变量的值 
+//15.1删除单子句，将指针标记改为true，存真子句地址于数组中，返回单子句中变量的值 
 {
 	if(!node || !node->lit){
 		printf("ERROR! clause DON'T exist,can't delete\n");
@@ -546,7 +593,7 @@ int deleteOneClause(CLAUSE *node, SqList &L, CNF &S, LITSHEET* ans)
 }
 
 bool deleteOneClause_slt(CLAUSE *node, SqList &L, CNF &S) 
-//15*.删除真子句，存真子句地址于数组中，不用返回值 
+//15.2删除真子句，存真子句地址于数组中，不用返回值 
 {
 	if(!node || !node->lit ||!node->num){
 		printf("DON'T exist,can't delete\n");
@@ -723,7 +770,7 @@ showCNF(S); //每删一个文字
 }
 
 int choose_lit_1(CNF&S, LITSHEET* ans)
-//18.选false子句的第一个未定文字 
+//18.1选false子句的第一个未定文字 
 {
 	CLAUSE *big = existUnitClause(S.head);
 	CLAUSE *node = S.head;
@@ -764,7 +811,7 @@ int choose_lit_1(CNF&S, LITSHEET* ans)
 }
 
 int choose_lit_2(CNF&S, LITSHEET* ans)
-//18.选目前在更多false子句中出现的文字 
+//18.2选目前在更多false子句中出现的文字 
 {
 	INFO_L *lit = NULL;
 	int max = 0,record = 0, cnt = 0;
@@ -807,7 +854,7 @@ int choose_lit_2(CNF&S, LITSHEET* ans)
 }
 
 int choose_lit_jw(CNF &S, LITSHEET* ans)
-// Jeroslow-Wang:在还没结果的var中选择子句尽量短的 
+// 18.3Jeroslow-Wang:在还没结果的var中选择子句尽量短的 
 {
 	int best_lit = 0;
 	double best_score = -1.0;
@@ -846,7 +893,7 @@ int choose_lit_jw(CNF &S, LITSHEET* ans)
 }
 
 int choose_lit_hybrid(CNF &S, LITSHEET* ans)
-// 将jw和2混合起来，算综合加权评分 
+//18.4 将jw和2混合起来，算综合加权评分 
 {
 	const double alpha = 0.7;
 	const double beta = 0.3;
@@ -1215,17 +1262,6 @@ status saveOutput(LITSHEET* ans, int cnt, char file[], double used_time)
 	return TRUE;
 }
 
-int num_trueclau(CNF &S)
-{
-	CLAUSE *clause = S.head;
-	int cnt = 0;
-	while(clause){
-		if(clause->isTrue == true)	cnt ++;
-		
-		clause = clause->next;
-	} 
-	return cnt;
-}
 
 /*规约为数独 部分*/
 
@@ -1234,12 +1270,10 @@ int num_trueclau(CNF &S)
 //	3.用DPLL查看解的个数
 //	4.反证法剪枝：若移除后存在多个解，则恢复该数字；否则保留空洞
 //	5.达到目标空洞数时输出数独初盘 
-
-
- bool fundConsCNF(CNF &S, LITSHEET *ans)
+bool fundConsCNF(CNF &S, LITSHEET *ans)
 //1.	将格、行列、宫限制转化为CNF (total 11988)
 //除去格约束（可省）一共8991个子句 
- {
+{
  	if(S.num_clau) return false;
  	S.num_var = 729;
  	// 初始化ans 
@@ -1464,11 +1498,10 @@ int num_trueclau(CNF &S)
  	return true; 
  }	
 
-
- bool percentConsCNF(CNF &S, LITSHEET *ans)
+bool percentConsCNF(CNF &S, LITSHEET *ans)
  //2.	将反对角线、窗口限制转化为CNF(total 999)
  //和前面加起来9990（没有格约束） 
- {
+{
  	if(!S.num_clau || !S.head) return false;
 	
  	int temp[9];	temp[0] = 73;
@@ -1572,9 +1605,9 @@ int num_trueclau(CNF &S)
  	return true;// 共12987个子句 
  }
 
- int ijk_cnf(int ijk)
+int ijk_cnf(int ijk)
  //3.	棋盘信息转化为cnf变量 
- {
+{
  	int cnf = 0;	bool minus = false;
  	if(ijk < 0)	minus = true;
  	ijk = abs(ijk); 
@@ -1587,11 +1620,11 @@ int num_trueclau(CNF &S)
 	
  	if(minus)	cnf *= -1;
  	return cnf;
- }
+}
 
- int cnf_ijk(int cnf)
+int cnf_ijk(int cnf)
  //4.	逆变换 
- {
+{
  	int ijk = 0;	bool minus = false;
  	if(cnf < 0)	minus = true;
  	cnf = abs(cnf); 
@@ -1614,9 +1647,9 @@ int num_trueclau(CNF &S)
  	return ijk;
  }
 
- int randomNum(int *value)
+int randomNum(int *value)
  //5.	根据指令生成位置的随机值
- {
+{
  	int range, ret;
  	//	位置 0-80
  	ret = rand() % 81;
@@ -1626,9 +1659,9 @@ int num_trueclau(CNF &S)
  	return ret;	
  } 
 
- void addUnitClause(CNF &S, int value,LITSHEET * ans)
+void addUnitClause(CNF &S, int value,LITSHEET * ans)
  //6.	头部增加单子句作为填数 
- {
+{
  	LITERAL *lit = (LITERAL *)malloc(sizeof(LITERAL));
  	lit->next = NULL;
  	lit->value =value;
@@ -1667,9 +1700,9 @@ int num_trueclau(CNF &S)
 	
  }
 
- bool deleteS_head(CNF &S,LITSHEET * ans)
+bool deleteS_head(CNF &S,LITSHEET * ans)
  //7.	删掉开头子句便于回溯 
- {
+{
  	if(! S.head){
  		printf("CNF empty !Can't delete head!\n");
  		return false;
@@ -1714,17 +1747,19 @@ int num_trueclau(CNF &S)
  	return true;
  }
  
- bool DFS_board(int row, int col, int cnt, CNF &S, int board[N][N],LITSHEET * ans)
- //8.通过给出的数进行DFS生成终盘 
- {
+bool DFS_board_1(int row, int col, int cnt, CNF &S, int board[N][N],LITSHEET * ans)
+ //8.1通过给出的数进行DFS生成终盘 
+{
  	if(cnt == 81)	return true;	//	已填满
 	 
- 	int value, i, j;
+ 	int value, i, j, start;
  	bool flag = false;
  	bool prun = false;
 	// 找到第一个空位处	
  	for(i = row; i < N; i ++){
- 		for(j = col; j < N;j ++){
+ 		if(i == row)	start = col;
+ 		else			start = 0;
+ 		for(j = start; j < N;j ++){
  			if(board[i][j] == 0){
  				flag = true;
  				break;
@@ -1786,34 +1821,126 @@ int num_trueclau(CNF &S)
  		value = ijk_cnf((i+1)*100 + (j+1)*10 + k);	//棋盘位置加填的数转化为cnf变元的值 
  		
 		addUnitClause(S, value, ans);
- 		Output_CNF(S);
- 		
- 		if(DPLL(S, ans)){
-//			showBoard(board);
- 			for(int ii = 0;ii <= SUDOKU_VAR; ii++)	ans[ii].ans = 0;		//	若为true，ans将不会清零
-			 
- 			flag =  DFS_board(i + (j + 1)/9, (j + 1)%9, cnt + 1, S,board,ans);
-			
- 			if(flag)	return true;
- 		}
- 		//	DPLL或DFS失败
 
+		flag =  DFS_board_1(i + (j + 1)/9, (j + 1)%9, cnt + 1, S,board,ans);
+		
+		if(flag)	return true;
+
+//	DFS失败
  		deleteS_head(S, ans);
- 		Output_CNF(S);
  	}
-		Output_CNF(S);
- 		board[i][j] = 0; 
+
+ 	board[i][j] = 0; 
 // 		showBoard(board);
 
  	return false;	
  }
 
+bool DFS_board_2(int row, int col, int cnt, CNF &S, int board[N][N],LITSHEET * ans)
+ //8.1通过给出的数进行DFS生成终盘 
+{
+ 	if(cnt == 81)	return true;	//	已填满
+	 
+ 	int value, i, j, start;
+ 	bool flag = false;
+ 	bool prun = false;
+	// 找到第一个空位处	
+	for(i = row; i < N; i ++){
+ 		if(i == row)	start = col;
+ 		else			start = 0;
+ 		for(j = start; j < N;j ++){
+ 			if(board[i][j] == 0){
+ 				flag = true;
+ 				break;
+			 }	
+ 		}
+ 		if(flag)	break;
+ 	}			 
+ 	flag = false;
+ 	
+ 	//构建 1-9随机数组 
+	int ran_arr[9]={0}, ran;
+	for(int t = 1;t < 10;t ++){
+		ran = rand() % 9;
+		while(ran_arr[ran] ) ran = (ran + 1)% 9;
+			ran_arr[ran] = t;
+	}			
 
+ 	for(int t = 0;t < 9;t ++){
+ 		int k = ran_arr[t];
+ 		
+ 		for(int r = 0;r < N;r++){ 
+ 			if(board[i][r] == k){
+ 				prun = true;
+				break; 
+			 }
+		 }	
+		if(prun){
+			prun = false;
+			continue;
+		}
+		
+		for(int c = 0;c < N;c++){ 
+ 			if(board[c][j] == k){
+ 				prun = true;
+				break; 
+			 }
+		 }
+		if(prun){
+			prun = false;
+			continue;
+		}
+		
+	    for (int r = 0; r < BOX_SIZE; r++) {
+	        for (int c = 0; c < BOX_SIZE; c++) {
+	        	int box_row = i - i % BOX_SIZE;
+	    		int box_col = j - j % BOX_SIZE;
+	            if (board[box_row + r][box_col + c] == k) {
+	                prun = true;
+	                break;
+	            }
+	        }
+	        if(prun)	break;
+	    }
+		if(prun){
+			prun = false;
+			continue;
+		}		
+		 	
+		if(i + j == N - 1){
+			for(int dia = 0; dia < N; dia ++){
+				if(board[dia][N-1-dia] == k){
+					prun = true;
+					break;
+				}
+			}
+			if(prun){
+				prun = false;
+				continue;
+			}			
+		}
+									
+ 		board[i][j] = k;
+ 		value = ijk_cnf((i+1)*100 + (j+1)*10 + k);	//棋盘位置加填的数转化为cnf变元的值 
+ 		
+		addUnitClause(S, value, ans);
+		
+		flag =  DFS_board_2(i + (j + 1)/9, (j + 1)%9, cnt + 1, S,board,ans);
+		
+		if(flag)	return true;
 
- bool generate(CNF &S, int board[N][N], LITSHEET* ans)
- //9.	通过拉斯维加斯算法生成终盘
- {
- 	int i = 0, j = 0, t, cnt = INIT_NUM, value = 0, *p_value = &value;
+//	DFS失败
+ 		deleteS_head(S, ans);
+ 	}
+ 	board[i][j] = 0; 
+
+ 	return false;	
+ }
+
+bool generate_1(CNF &S, int board[N][N], LITSHEET* ans)
+ //9.1	通过拉斯维加斯算法生成终盘
+{
+ 	int i = 0, j = 0, t, cnt = INIT_NUM_1, value = 0, *p_value = &value;
  	bool btemp = false;
 	
  // Las Vagas随机选13个位置并随机选数 
@@ -1826,7 +1953,7 @@ int num_trueclau(CNF &S)
  		t = ijk_cnf((i + 1)* 100 + (j + 1)* 10 + value);
 
  		addUnitClause(S, t, ans);
- 		if(cnt == INIT_NUM){
+ 		if(cnt == INIT_NUM_1){
  			board[i][j] = value;
  			cnt --;
  			continue;
@@ -1845,38 +1972,224 @@ int num_trueclau(CNF &S)
  				break;
  			}	
  		}	
- 	/*	printf("check info :cnt = %d\nS.num_clau = %d\n",cnt,S.num_clau);
- 		showClause(S.tail);printf("\n");*/
+
  	}
 
  	if(cnt != 0){
  		printf("Las Vagas Alo FAILED\n");
  		return false;
  	}		
-	printf("Las Vagas Alo SUCCESS with %d items!\n",INIT_NUM);
-	showBoard(board);
+//	printf("Las Vagas Alo SUCCESS with %d items!\n",INIT_NUM_1);
+//	showBoard(board);
  //	生成完整终盘 
- 	if(DFS_board( 0, 0, INIT_NUM, S, board, ans)){
- 		printf("生成终盘成功，Congratulations!\n");
- 		showBoard (board);
+
+ 	if(DFS_board_1( 0, 0, INIT_NUM_1, S, board, ans)){
+ 		if(DPLL(S, ans)){
+//	  		printf("生成终盘成功，Congratulations!\n");
+	  		for(int ii = 0;ii <= SUDOKU_VAR; ii++)	ans[ii].ans = 0;
+//	 		showBoard (board);			
+ 		}else{
+ 			printf("生成终盘但终盘错误！\n");
+ 			recoverCNF(S,ans);
+ 			recoverBoard(board);
+ 			return false;
+		 }
  	}else{
  		printf("生成终盘失败\n");
+ 		recoverCNF(S,ans);
+ 		recoverBoard(board);
  		return false;
  	}
 	
  	return true; 
   } 
-
-bool dig_holes(CNF &S, int board[N][N], LITSHEET *ans)
-//10. 挖洞法生成数独游戏 
+bool generate_2(CNF &S, int board[N][N], LITSHEET* ans)
+//9.2	通过拉斯维加斯算法生成终盘(先完成窗口，其他的正常进行)
 {
+ 	int ran_arr1[9]={0},ran_arr2[9]={0}, ran, value, t;
+	for(int t = 1;t < 10;t ++){
+		ran = rand() % 9;
+		while(ran_arr1[ran] ) ran = (ran + 1)% 9;
+		
+		ran_arr1[ran] = t;
+	}
+	for(int t = 1;t < 10;t ++){
+		ran = rand() % 9;
+		while(ran_arr2[ran] ) ran = (ran + 1)% 9;
+		
+		ran_arr2[ran] = t;
+	}
+	if(ran_arr1[8] == ran_arr2[0]){
+		int t = ran_arr2[0];
+		ran_arr2[0] = ran_arr2[1];
+		ran_arr2[1] = t;
+	}
+ 	//第一个窗口 11到33 
+ 	ran = 0;	
+	for(int r = 1;r <= BOX_SIZE; r++){
+		for(int c = 1;c <= BOX_SIZE; c++){
+			
+			value = ran_arr1[ran];
+	 		t = ijk_cnf((r + 1)* 100 + (c + 1)* 10 + value);
+	 		addUnitClause(S, t, ans);
+	 		
+			board[r][c] = value;
+			ran ++;
+		}
+	}
+	//第二个窗口55-77 
+	ran = 0; 
+	for(int r = 5;r < 8; r++){
+		for(int c = 5;c < 8; c++){
+			value = ran_arr2[ran];
+	 		t = ijk_cnf((r + 1)* 100 + (c + 1)* 10 + value);
+	 		addUnitClause(S, t, ans);
+			 			
+			board[r][c] = value;
+			ran ++;
+		}				
+	}
+//	printf("Las Vagas Alo SUCCESS with %d items!\n",INIT_NUM_2);
+//	showBoard(board); 
+//	Output_CNF(S); 
+ 
+ 	if(DFS_board_2( 0, 0, INIT_NUM_2, S, board, ans)){
+ 		if(DPLL(S, ans)){
+//	  		printf("生成终盘成功，Congratulations!\n");
+	  		for(int ii = 0;ii <= SUDOKU_VAR; ii++)	ans[ii].ans = 0;		
+ 		}else{
+ 			printf("生成终盘但终盘错误！\n");
+ 			recoverCNF(S,ans);
+ 			recoverBoard(board);
+ 			return false;
+		 }
+ 	}else{
+ 		printf("生成终盘失败\n");
+ 		recoverCNF(S,ans);
+ 		recoverBoard(board);
+ 		return false;
+ 	}
+	
+ 	return true; 
+} 
+
+void recoverCNF(CNF &S, LITSHEET *ans)
+//10
+{
+	while(S.head && S.head->num == 1){
+		deleteS_head(S,ans);
+	}
+//	Output_CNF(S);
+}
+void recoverBoard(int board[N][N])
+//11
+{
+	for(int i = 0;i < N; i++)
+		for(int j = 0;j < N; j++)
+			board[i][j] = 0;
+}
+void copyBoard(int record[N][N], int board[N][N])
+//12.
+{
+	for(int i = 0;i < N; i++)
+		for(int j = 0;j < N; j++)
+			record[i][j] = board[i][j];
+}
+
+bool dig_holes(int board[N][N], int blank, int mode)
+//13. 挖洞法生成数独游戏 
+{
+ 	int row = 0, col = 0, t, cnt = blank, value;
+ 	int visit[N][N] = {0}; 
+ 	
+	bool (*pfunc)(int board[N][N], int, int, int) = NULL;
+	if(mode == 1)			pfunc = fast_check_1;
+	else if(mode == 2)		pfunc = fast_check_2;
+	else return false;
+	
+ 	bool btemp = false,flag = false;	
+ 	while(cnt){
+ 		btemp = false;
+		flag = false;
+		t = rand() % 81;
+		row = t / 9;
+		col = t % 9;
+		//已经挖了/已经访问过了（剪枝）
+		if(visit[row][col] == 1 || board[row][col] == 0)	continue; 
+		
+		value = board[row][col];
+		board[row][col] = 0;
+		visit[row][col] = 1; 
+		
+		if(cnt == blank){
+			cnt --;
+			continue;
+		}
+		
+		for(int i = 1;i < 10; i ++){
+			if(i != value){						//替换成别的数 
+				btemp = pfunc(board,row,col,i);
+				if(btemp){						//挖掉这个不存在唯一解,复原 
+					board[row][col] = value;
+					flag = true;
+					break;
+				}
+			}
+		}
+		
+		if(!flag)		cnt --;		 		
+	}
+	
+	if(!cnt)	return true;			
 	return false;
 }
 
+bool fast_check_1(int board[N][N], int x, int y, int n)
+//14.1
+{
+	for (int j = 0; j < 9; j++)	//检测行
+		if (board[x][j] == n)
+			return 0;
+	for (int i = 0; i < 9; i++)	//检测列
+		if (board[i][y] == n)
+			return 0;
+	for (int i = x / 3 * 3; i < x / 3 * 3 + 3; i++)	//单元格矩阵
+		for (int j = y / 3 * 3; j < y / 3 * 3 + 3; j++)
+			if (board[i][j] == n)
+				return 0;
+	return 1;
+}
+
+bool fast_check_2(int board[N][N], int x, int y, int n)
+//14.2
+{
+	for (int j = 0; j < 9; j++)	//检测行
+		if (board[x][j] == n)
+			return 0;
+	for (int i = 0; i < 9; i++)	//检测列
+		if (board[i][y] == n)
+			return 0;
+	for (int i = x / 3 * 3; i < x / 3 * 3 + 3; i++)	//单元格矩阵
+		for (int j = y / 3 * 3; j < y / 3 * 3 + 3; j++)
+			if (board[i][j] == n)
+				return 0;
+	for(int dia = 0; dia < N; dia++)//反对角线 
+		if(board[dia][N-1-dia] == n)
+			return 0;
+	for(int i = 1;i < 4; i++)		//两个窗口 
+		for(int j = 1;j < 4;j ++)
+			if (board[i][j] == n)
+				return 0;
+	for(int i = 5;i < 8; i++)
+		for(int j = 5;j < 8;j ++)
+			if (board[i][j] == n)
+				return 0;	
+	return 1;
+}
 
 void showBoard(int board[N][N])
- //20.
- {
+ //15.
+{
      printf("    1   2   3   4   5   6   7   8   9\n");
      printf("  ╔═══╤═══╤═══╦═══╤═══╤═══╦═══╤═══╤═══╗\n");//开头2个空格
     
@@ -1910,11 +2223,11 @@ void showBoard(int board[N][N])
              printf("  ╟───┼───┼───╫───┼───┼───╫───┼───┼───╢\n");
          }
      }
- }
+}
 
 void Output_CNF(CNF &S)
- //.将cnf输出到CNF_output文件中 
- {
+ //16.将cnf输出到CNF_output文件中 
+{
  	FILE *fp = fopen("CNF_output.cnf","w");
  	if(!fp){
  		printf("ERROR cannot output to 'CNF_output'");
@@ -1937,6 +2250,12 @@ void Output_CNF(CNF &S)
     
  	fclose(fp);
  }
+
+/*与用户交互 部分*/
+void play(int record[N][N],int board[N][N])
+//1.
+{
+}
 
 /*#include <stdio.h>
 #include <stdlib.h>

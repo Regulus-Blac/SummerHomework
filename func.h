@@ -1,3 +1,6 @@
+#ifndef __FUNC_H__
+#define __FUNC_H__
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,6 +17,7 @@ using namespace std;
 #define ERROR 0
 typedef int status;
 typedef int ElemType;
+
 // SqList
 #define LIST_INIT_SIZE 1500
 #define LISTINCREMENT 1000
@@ -26,12 +30,17 @@ typedef int ElemType;
 //input
 #define FILE_MAX 30
 //sudoku (initnum太大有可能导致终盘生成失败)
-#define INIT_NUM 13
 #define SUDOKU_VAR 729
 #define BOX_SIZE 3
 #define N 9
-
-
+#define INIT_NUM_1 15
+#define INIT_NUM_2 18
+#define MAX_GENERATE_1 10
+#define MAX_GENERATE_2 20
+//difficulty
+#define EASY 35
+#define MID 42
+#define HARD 50
 /*数据结构*/
 typedef struct literal {
     int value; // 文字的值
@@ -80,7 +89,6 @@ typedef struct{
 	int listsize;
 }SqBack;
 
-int num_trueclau(CNF &S);
 /*Part SqList & SqBack*/
 void InitList(SqList& L);
 void InitBack(SqBack& L);
@@ -90,9 +98,10 @@ status ClearList(SqList& L);
 status ClearBack(SqBack& L);
 status ListInsert(SqList &L,CLAUSE *node);
 status BackInsert(SqBack &L, int node);
-/*Part DPLL*/
 
-void makecopy(CNF &newS,const CNF &S); 
+/*Part DPLL*/
+//void makecopy(CNF &newS, CNF &S);
+int num_trueclau(CNF &S); 
 void initCNF(CNF &S, int var); 
 void clearCNF(CNF &S,LITSHEET* ans);
 void createClause(CNF &S);
@@ -129,8 +138,9 @@ void check(FILE *test,LITSHEET* ans,int cnt);
 status saveOutput(LITSHEET* ans, int cnt, char file[], double used_time);
 
 bool autocheck(CNF &S,LITSHEET* ans);
+
 /*Part Sudoku*/
-    
+
 bool fundConsCNF(CNF &S, LITSHEET *ans);
 bool percentConsCNF(CNF &S, LITSHEET *ans);
 int ijk_cnf(int ijk);
@@ -139,13 +149,28 @@ int randomNum(int code);
 
 void addUnitClause(CNF &S, int value,LITSHEET * ans);
 bool deleteS_head(CNF &S,LITSHEET * ans);
-bool DFS_board(int row, int col, int cnt, CNF &S, int board[N][N],LITSHEET* ans);
-bool generate(CNF &S, int board[N][N], LITSHEET* ans);
+bool DFS_board_1(int row, int col, int cnt, CNF &S, int board[N][N],LITSHEET* ans);
+bool generate_1(CNF &S, int board[N][N], LITSHEET* ans);
+bool DFS_board_2(int row, int col, int cnt, CNF &S, int board[N][N],LITSHEET* ans);
+bool generate_2(CNF &S, int board[N][N], LITSHEET* ans);
 
+void recoverCNF(CNF &S, LITSHEET *ans);
+void recoverBoard(int board[N][N]);
+void copyBoard(int board[N][N], int record[N][N]);
+bool dig_holes(int board[N][N], int diff, int mode);
 
-//bool dig_holes(CNF &S, int board[N][N], LITSHEET *ans);
-
-
-
+bool fast_check_1(int board[N][N], int x, int y, int n);
+bool fast_check_2(int board[N][N], int x, int y, int n);
 void showBoard(int board[N][N]);
 void Output_CNF(CNF &S);
+
+/*Part Play*/
+void play(int record[N][N],int board[N][N]);
+
+
+
+
+
+
+
+#endif

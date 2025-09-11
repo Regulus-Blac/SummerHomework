@@ -7,12 +7,12 @@ int main()
 	double used_time;
 	srand(time(NULL));
 	const char* inSuf = ".cnf"; char file[FILE_MAX];
-    int board[N][N];
-    for(int i = 0;i < N; i++)
-    	for(int j = 0;j < N; j++)	board[i][j] = 0;
+    int board[N][N], record[N][N];
+    recoverBoard( board);	recoverBoard( record);
     int choice = 0, num_var = 0;
 
-	CNF S;  initCNF(S, 0);
+	CNF S;  	initCNF(S, 0);
+	CNF newS;	initCNF(newS, 0);
 	LITSHEET *ans = (LITSHEET *)malloc(sizeof(LITSHEET) * (1 + MAX_VAR));
 
 	if(!ans){
@@ -96,43 +96,98 @@ int main()
 			}
                 
             case 2:{
-            	int mode;char files[20] = "CNF_output.cnf";
+            	int mode;
+				char files[20] = "CNF_output.cnf";
+				bool flag = false, t;
             	printf("Choose your game:1->SUDOKU 2->%%-SUDOKU 0->QUIT\n");
-            	scanf("%d",&mode);
-            	
+            	scanf("%d",&mode);	  
+       	
             	if(!mode)	break;
-				fundConsCNF(S,ans);
-				if(mode == 2)	percentConsCNF(S,ans);
-				
-				Output_CNF(S);
-//				SqList L;
-//				L.elem = (PCLAUSE *)malloc(sizeof(PCLAUSE) * 20);
-//				L.length = 0;
-//				L.listsize = 20;				
+				else if(mode == 1){
 					
-				bool t = generate(S, board, ans);
-				if(t){
-	//				printf("请选择难度： 1 for easy,2 for mid, 3 for high\n");
-	//				int diff;	scanf("%d",&diff);
-	//				if(diff == 1){
-	//					
-	//				}else if(diff == 2){
-	//					
-	//				}else if(deff == 3){
-	//					
-	//				}else{
-	//					printf("输入错误，将自动生成easy难度\n");
-	//				}					
-				}else{
-					printf("由于运气有点差QAQ,这一次生成终盘没有成功，请再试一次吧！AvA\n");
+					fundConsCNF(S,ans);
+					
+					t = generate_1(S, board, ans);
+					while(t == false){
+						static int howmany = 0;
+						howmany ++;		
+						if(howmany >= MAX_GENERATE_1)	{
+							flag = true;
+							printf("无法生成数独！\n");
+							break;
+						}
+						printf("由于运气有点差QAQ,这一次生成终盘没有成功，正在重新尝试呢！AvA\n");
+						t =  generate_1(S, board, ans);
+           	
+					}					
+				}		
+				else if(mode == 2){
+					
+					fundConsCNF(S,ans);
+					percentConsCNF(S,ans);
+					
+					t = generate_2(S, board, ans);
+					while(t == false){
+						static int howmany = 0;
+						howmany ++;		
+						if(howmany >= MAX_GENERATE_2)	{
+							flag = true;
+							printf("无法生成数独！\n");
+							break;
+						}
+						printf("由于运气有点差QAQ,这一次生成终盘没有成功，正在重新尝试呢！AvA\n");
+						t =  generate_2(S, board, ans);          	
+					}					
+				}	
+				else{
+					printf("无效输入，请重试\n");
+					break;
+				} 
+					
+				if(flag){
+					clearCNF(S,ans);
+					recoverBoard(board); 
+					break;
 				}
+					
+				//先存储正确答案 
+				copyBoard(record, board);
+				showBoard(record);
 				
-
+				printf("请选择难度： 1 for easy,2 for mid, 3 for high\n");
+				int diff, blank;	scanf("%d",&diff);
+				if(diff == 1){
+					blank = EASY;
+				}else if(diff == 2){
+					blank = MID;
+				}else if(diff == 3){
+					blank = HARD;
+				}else{
+					printf("输入错误，将自动生成easy难度\n");
+					blank = EASY;
+				}		
 				
-				break;            	
-			}
-
+				if(dig_holes( board,blank, mode)){
+//					printf("挖洞成功！挖了%d个空，棋盘现在为：\n",blank);
+//					showBoard(board);
+					play(record,board); 
+				}else{
+					printf("挖洞失败，构造数独失败！");
+					clearCNF(S,ans);
+					recoverBoard(board);
+					recoverBoard(record);
+					break;
+				}	
+			
 				
+				//结束后清零 
+				clearCNF(S,ans);
+				recoverBoard(board);
+				recoverBoard(record);
+				initCNF(S, 0);
+				break;
+				
+	}
             case 3:{
                 printf("Exiting...\n");
                 free(ans);
