@@ -1747,7 +1747,7 @@ bool deleteS_head(CNF &S,LITSHEET * ans)
  	return true;
  }
  
-bool DFS_board_1(int row, int col, int cnt, CNF &S, int board[N][N],LITSHEET * ans)
+bool DFS_board_1(int row, int col, int cnt, CNF &S, /*int board[N][N],*/LITSHEET * ans)
  //8.1通过给出的数进行DFS生成终盘 
 {
  	if(cnt == 81)	return true;	//	已填满
@@ -1822,7 +1822,7 @@ bool DFS_board_1(int row, int col, int cnt, CNF &S, int board[N][N],LITSHEET * a
  		
 		addUnitClause(S, value, ans);
 
-		flag =  DFS_board_1(i + (j + 1)/9, (j + 1)%9, cnt + 1, S,board,ans);
+		flag =  DFS_board_1(i + (j + 1)/9, (j + 1)%9, cnt + 1, S/*,board*/,ans);
 		
 		if(flag)	return true;
 
@@ -1836,7 +1836,7 @@ bool DFS_board_1(int row, int col, int cnt, CNF &S, int board[N][N],LITSHEET * a
  	return false;	
  }
 
-bool DFS_board_2(int row, int col, int cnt, CNF &S, int board[N][N],LITSHEET * ans)
+bool DFS_board_2(int row, int col, int cnt, CNF &S,/* int board[N][N],*/LITSHEET * ans)
  //8.1通过给出的数进行DFS生成终盘 
 {
  	if(cnt == 81)	return true;	//	已填满
@@ -1925,7 +1925,7 @@ bool DFS_board_2(int row, int col, int cnt, CNF &S, int board[N][N],LITSHEET * a
  		
 		addUnitClause(S, value, ans);
 		
-		flag =  DFS_board_2(i + (j + 1)/9, (j + 1)%9, cnt + 1, S,board,ans);
+		flag =  DFS_board_2(i + (j + 1)/9, (j + 1)%9, cnt + 1, S/*,board*/,ans);
 		
 		if(flag)	return true;
 
@@ -1937,7 +1937,7 @@ bool DFS_board_2(int row, int col, int cnt, CNF &S, int board[N][N],LITSHEET * a
  	return false;	
  }
 
-bool generate_1(CNF &S, int board[N][N], LITSHEET* ans)
+bool generate_1(CNF &S, /*int board[N][N],*/ LITSHEET* ans)
  //9.1	通过拉斯维加斯算法生成终盘
 {
  	int i = 0, j = 0, t, cnt = INIT_NUM_1, value = 0, *p_value = &value;
@@ -1983,7 +1983,7 @@ bool generate_1(CNF &S, int board[N][N], LITSHEET* ans)
 //	showBoard(board);
  //	生成完整终盘 
 
- 	if(DFS_board_1( 0, 0, INIT_NUM_1, S, board, ans)){
+ 	if(DFS_board_1( 0, 0, INIT_NUM_1, S,/* board,*/ ans)){
  		if(DPLL(S, ans)){
 //	  		printf("生成终盘成功，Congratulations!\n");
 	  		for(int ii = 0;ii <= SUDOKU_VAR; ii++)	ans[ii].ans = 0;
@@ -2003,7 +2003,7 @@ bool generate_1(CNF &S, int board[N][N], LITSHEET* ans)
 	
  	return true; 
   } 
-bool generate_2(CNF &S, int board[N][N], LITSHEET* ans)
+bool generate_2(CNF &S, /*int board[N][N],*/ LITSHEET* ans)
 //9.2	通过拉斯维加斯算法生成终盘(先完成窗口，其他的正常进行)
 {
  	int ran_arr1[9]={0},ran_arr2[9]={0}, ran, value, t;
@@ -2053,7 +2053,7 @@ bool generate_2(CNF &S, int board[N][N], LITSHEET* ans)
 //	showBoard(board); 
 //	Output_CNF(S); 
  
- 	if(DFS_board_2( 0, 0, INIT_NUM_2, S, board, ans)){
+ 	if(DFS_board_2( 0, 0, INIT_NUM_2, S,/* board,*/ ans)){
  		if(DPLL(S, ans)){
 //	  		printf("生成终盘成功，Congratulations!\n");
 	  		for(int ii = 0;ii <= SUDOKU_VAR; ii++)	ans[ii].ans = 0;		
@@ -2096,19 +2096,21 @@ void copyBoard(int record[N][N], int board[N][N])
 			record[i][j] = board[i][j];
 }
 
-bool dig_holes(int board[N][N], int blank, int mode)
+int dig_holes(/*int board[N][N],*/ int blank/*, int mode*/)
 //13. 挖洞法生成数独游戏 
 {
+	size_t s,e;	double d = 0.0;
  	int row = 0, col = 0, t, cnt = blank, value;
  	int visit[N][N] = {0}; 
  	
-	bool (*pfunc)(int board[N][N], int, int, int) = NULL;
+	bool (*pfunc)(/*int board[N][N], */int, int, int) = NULL;
 	if(mode == 1)			pfunc = fast_check_1;
 	else if(mode == 2)		pfunc = fast_check_2;
 	else return false;
 	
- 	bool btemp = false,flag = false;	
- 	while(cnt){
+ 	bool btemp = false,flag = false;
+	s = clock();	
+ 	while(cnt && d < 4.5){
  		btemp = false;
 		flag = false;
 		t = rand() % 81;
@@ -2128,7 +2130,7 @@ bool dig_holes(int board[N][N], int blank, int mode)
 		
 		for(int i = 1;i < 10; i ++){
 			if(i != value){						//替换成别的数 
-				btemp = pfunc(board,row,col,i);
+				btemp = pfunc(/*board,*/row,col,i);
 				if(btemp){						//挖掉这个不存在唯一解,复原 
 					board[row][col] = value;
 					flag = true;
@@ -2137,14 +2139,16 @@ bool dig_holes(int board[N][N], int blank, int mode)
 			}
 		}
 		
-		if(!flag)		cnt --;		 		
+		if(!flag)		cnt --;	
+		e = clock();
+		d = (double)(e - s)/CLOCKS_PER_SEC;	 		
 	}
 	
-	if(!cnt)	return true;			
-	return false;
+	if(cnt >= blank/5)	return -1;			
+	return blank - cnt;
 }
 
-bool fast_check_1(int board[N][N], int x, int y, int n)
+bool fast_check_1(/*int board[N][N],*/ int x, int y, int n)
 //14.1
 {
 	for (int j = 0; j < 9; j++)	//检测行
@@ -2160,7 +2164,7 @@ bool fast_check_1(int board[N][N], int x, int y, int n)
 	return 1;
 }
 
-bool fast_check_2(int board[N][N], int x, int y, int n)
+bool fast_check_2(/*int board[N][N],*/ int x, int y, int n)
 //14.2
 {
 	for (int j = 0; j < 9; j++)	//检测行
@@ -2252,350 +2256,144 @@ void Output_CNF(CNF &S)
  }
 
 /*与用户交互 部分*/
-void play(int record[N][N],int board[N][N])
+void play()
 //1.
 {
+	int input, i, j, k;
+	copyBoard(user, board);
+	clock_t time_start,time_end;
+	time_start = clock();
+	printf("您的数独已生成，请输入形如ijk的数,代表第i行第j列填入k,ij0代表撤回,注意：给出的初始值不能修改，\n");
+	while(!gameEnd()){
+		
+		showBoardstar();
+		scanf("%d",&input);
+
+		if(input < 110 || input > 999){
+			printf("无效输入\n");
+		}
+		i = input / 100 ;
+		j = input % 100 / 10 ;
+		k = input % 100 % 10;
+		if(!i || !j)	printf("无效输入！\n");
+		
+		if(erroInfo(i-1,j-1,k))
+			printf("请重新输入\n"); 
+		else
+			user[i-1][j-1] = k;
+	}
+	
+	time_end = clock();
+	double delta = time_end - time_start;
+	printf("您已成功解出数独，耗时%f s",delta);
+	
+	
 }
+bool erroInfo(int i, int j, int k)
+//检查是否出错，并输出报错信息 
+{
+	if(board[i][j]){
+		printf("不可以修改给定值！\n");
+		return true;
+	}
+	if(k == record[i][j] || !k)	return false;	//	正解或回退 
+	int row,col;
+	for (col = 0; col < 9; col++)	//检测行
+		if (board[i][col] == k){
+			printf("同一行只能有一个相同的数，与第%d行第%d列冲突\n",i+1,col+1);
+			return true;			
+		}	
+	for (row = 0; row < 9; row++)
+		if(board[row][j] == k){
+			printf("同一列只能有一个相同的数，与第%d行第%d列冲突\n",row+1,j+1);
+			return true;			
+		}
+	for ( row = i / 3 * 3; row < i / 3 * 3 + 3; row++)	//单元格矩阵
+		for ( col = j / 3 * 3; col < j / 3 * 3 + 3; col++)
+			if (board[row][col] == k){
+				printf("同一3*3宫只能有一个相同的数，与第%d行第%d列冲突\n",row+1,col+1);
+				return true;		
+			}
+	if(mode == 2){
+		if(i + j == 8){
+			for(int dia = 0; dia < N; dia++)//反对角线 
+				if(board[dia][N-1-dia] == k){
+					printf("斜对角线只能有一个相同的数，与第%d行第%d列冲突\n",dia+1,N-dia);
+					return true;			
+				}		
+		}
+		if(i > 0 && i < 4 && j > 0 && j < 4 ){
+			for( row = 1;row < 4; row++)		//两个窗口 
+				for( col = 1;col < 4;col ++)
+					if (board[row][col] == k){
+						printf("左上窗口只能有一个相同的数，与第%d行第%d列冲突\n",row+1,col+1);
+						return true;				
+					}	
+		}
+		if(i > 4 && i < 8 && j > 4 && j < 8 ){
+			for(int row = 5;row < 8; row++)
+				for(int col = 5;col < 8;col ++)
+					if (board[row][col] == k){
+						printf("右下窗口只能有一个相同的数，与第%d行第%d列冲突\n",row+1,col+1);
+						return true;	
+					}	
+		}		
+	}		
 
-/*#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <stdbool.h>
-#include <string.h>
-
-#define N 9
-#define BOX_SIZE 3
-
-
-
-// 检查在grid[row][col]填入num是否有效
-bool is_valid(int grid[N][N], int row, int col, int num) {
-    // 检查行
-    for (int x = 0; x < N; x++) {
-        if (grid[row][x] == num) {
-            return false;
-        }
-    }
-
-    // 检查列
-    for (int x = 0; x < N; x++) {
-        if (grid[x][col] == num) {
-            return false;
-        }
-    }
-
-    // 检查3x3宫格
-    int box_start_row = row - row % BOX_SIZE;
-    int box_start_col = col - col % BOX_SIZE;
-    for (int i = 0; i < BOX_SIZE; i++) {
-        for (int j = 0; j < BOX_SIZE; j++) {
-            if (grid[box_start_row + i][box_start_col + j] == num) {
-                return false;
-            }
-        }
-    }
-
-    return true;
+	printf("乍一看没什么问题，可是走到后面会发现不可以哦\n");
+	return true;
 }
-
-// 使用回溯法求解数独
-bool solve_sudoku(int grid[N][N], int *solution_count) {
-    int row = -1;
-    int col = -1;
-    bool isEmpty = false;
-
-    // 寻找空白格
-    for (int i = 0; i < N; i++) {
-        for (int j = 0; j < N; j++) {
-            if (grid[i][j] == 0) {
-                row = i;
-                col = j;
-                isEmpty = true;
-                break;
-            }
-        }
-        if (isEmpty) {
-            break;
-        }
-    }
-
-    // 无空白格，求解完成
-    if (!isEmpty) {
-        (*solution_count)++;
-        return true; // 找到解
-    }
-
-    // 尝试1-9的数字
-    for (int num = 1; num <= N; num++) {
-        if (is_valid(grid, row, col, num)) {
-            grid[row][col] = num;
-            
-            if (solve_sudoku(grid, solution_count)) {
-                // 如果我们只需要知道是否有多个解，可以在这里返回
-                if (*solution_count > 1) {
-                    return true;
-                }
-            }
-            
-            grid[row][col] = 0; // 回溯
-        }
-    }
-    
-    return false;
+bool gameEnd(/*int user[N][N]*/)
+//是否填完 
+{
+	for(int i = 0;i < N;i++)
+		for(int j = 0;j < N;j++)
+			if(user[i][j] == 0)	return false;
+			
+	return true;
 }
+void showBoardstar()
+{
+     printf("    1   2   3   4   5   6   7   8   9\n");
+     printf("  ╔═══╤═══╤═══╦═══╤═══╤═══╦═══╤═══╤═══╗\n");//开头2个空格
+    
+     for(int i = 0; i < N; i++) {
 
-// 复制网格
-void copy_grid(int src[N][N], int dest[N][N]) {
-    for (int i = 0; i < N; i++) {
-        for (int j = 0; j < N; j++) {
-            dest[i][j] = src[i][j];
-        }
-    }
+         printf("%d ║",i+1);
+        
+         for(int j = 0; j < N; j++) {
+             // 0显示为空格
+             if(user[i][j] == 0) {
+                 printf("   ");
+             } else {
+             		if(mode == 2){
+	             		if((i > 0 && i < 4 && j > 0 && j < 4 )||(i > 4 && i < 8 && j > 4 && j < 8 ))	printf("*");
+	             		else																			printf(" ");             			
+					 }else{
+					 	printf(" ");
+					 }
+
+             		if(board[i][j])		printf("%d.", user[i][j]);
+                 	else				printf("%d ", user[i][j]);
+             }
+
+             if(j == 8) {
+                 printf("║");
+             } else if(j % 3 == 2) {
+                 printf("║");
+             } else {
+                 printf("│");
+             }
+         }
+         printf("\n");
+
+         if(i == 8) {
+             printf("  ╚═══╧═══╧═══╩═══╧═══╧═══╩═══╧═══╧═══╝\n");
+         } else if(i % 3 == 2) {
+             printf("  ╠═══╪═══╪═══╬═══╪═══╪═══╬═══╪═══╪═══╣\n");
+         } else {
+             printf("  ╟───┼───┼───╫───┼───┼───╫───┼───┼───╢\n");
+         }
+	}
 }
-
-// 检查解的唯一性
-bool has_unique_solution(int grid[N][N]) {
-    int temp_grid[N][N];
-    copy_grid(grid, temp_grid);
-    
-    int solution_count = 0;
-    solve_sudoku(temp_grid, &solution_count);
-    
-    return solution_count == 1;
-}
-
-// 生成完整数独终盘
-void generate_full_sudoku(int grid[N][N]) {
-    // 先清空网格
-    for (int i = 0; i < N; i++) {
-        for (int j = 0; j < N; j++) {
-            grid[i][j] = 0;
-        }
-    }
-    
-    // 生成一个随机完整网格
-    srand(time(0));
-    
-    // 填充第一个3x3宫格
-    int nums[N] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
-    
-    // 随机打乱数字
-    for (int i = 0; i < N; i++) {
-        int j = rand() % N;
-        int temp = nums[i];
-        nums[i] = nums[j];
-        nums[j] = temp;
-    }
-    
-    // 填充第一个宫格
-    int index = 0;
-    for (int i = 0; i < BOX_SIZE; i++) {
-        for (int j = 0; j < BOX_SIZE; j++) {
-            grid[i][j] = nums[index++];
-        }
-    }
-    
-    // 使用回溯法填充剩余部分
-    int solution_count = 0;
-    solve_sudoku(grid, &solution_count);
-}
-
-// 挖洞法生成谜题
-void generate_puzzle(int grid[N][N], int holes) {
-    // 生成完整终盘
-    generate_full_sudoku(grid);
-    
-    // 复制一份完整网格作为备份
-    int solution[N][N];
-    copy_grid(grid, solution);
-    
-    // 计算需要挖去的洞数
-    int holes_dug = 0;
-    int attempts = 0;
-    const int max_attempts = 200; // 防止无限循环
-    
-    srand(time(0));
-    
-    while (holes_dug < holes && attempts < max_attempts) {
-        // 随机选择位置
-        int row = rand() % N;
-        int col = rand() % N;
-        
-        // 如果该位置已经为空，跳过
-        if (grid[row][col] == 0) {
-            attempts++;
-            continue;
-        }
-        
-        // 保存当前值
-        int backup = grid[row][col];
-        grid[row][col] = 0;
-        
-        // 检查是否唯一解
-        int test_grid[N][N];
-        copy_grid(grid, test_grid);
-        
-        if (has_unique_solution(test_grid)) {
-            holes_dug++;
-        } else {
-            // 恢复原值
-            grid[row][col] = backup;
-        }
-        
-        attempts++;
-    }
-    
-    printf("挖洞完成: %d/%d\n", holes_dug, holes);
-}
-
-// 保存数独到文件
-void save_sudoku(int grid[N][N], const char *filename) {
-    FILE *file = fopen(filename, "w");
-    if (!file) {
-        perror("无法打开文件");
-        return;
-    }
-    
-    for (int i = 0; i < N; i++) {
-        for (int j = 0; j < N; j++) {
-            fprintf(file, "%d", grid[i][j]);
-            if (j < N - 1) fprintf(file, ",");
-        }
-        fprintf(file, "\n");
-    }
-    
-    fclose(file);
-    printf("数独已保存到 %s\n", filename);
-}
-
-// 从文件加载数独
-void load_sudoku(int grid[N][N], const char *filename) {
-    FILE *file = fopen(filename, "r");
-    if (!file) {
-        perror("无法打开文件");
-        return;
-    }
-    
-    char line[256];
-    int row = 0;
-    
-    while (fgets(line, sizeof(line), file) && row < N) {
-        char *token = strtok(line, ",");
-        int col = 0;
-        
-        while (token && col < N) {
-            grid[row][col] = atoi(token);
-            token = strtok(NULL, ",");
-            col++;
-        }
-        row++;
-    }
-    
-    fclose(file);
-    printf("数独已从 %s 加载\n", filename);
-}
-
-int main() {
-    int grid[N][N];
-    int solution[N][N];
-    
-    // 用户选择
-    int choice;
-    printf("数独谜题生成器 - 挖洞法\n");
-    printf("1. 生成新谜题\n");
-    printf("2. 加载已有谜题\n");
-    printf("3. 求解数独\n");
-    printf("请选择: ");
-    scanf("%d", &choice);
-    
-    if (choice == 1) {
-        // 生成新谜题
-        int holes;
-        printf("输入要挖的洞数(20-60): ");
-        scanf("%d", &holes);
-        
-        if (holes < 20 || holes > 60) {
-            printf("无效洞数，使用默认值40\n");
-            holes = 40;
-        }
-        
-        generate_puzzle(grid, holes);
-        
-        printf("\n生成的数独谜题:\n");
-        print_grid(grid);
-        
-        // 保存选项
-        printf("\n保存谜题? (1=是, 0=否): ");
-        scanf("%d", &choice);
-        if (choice == 1) {
-            char filename[100];
-            printf("输入文件名: ");
-            scanf("%s", filename);
-            save_sudoku(grid, filename);
-        }
-        
-        // 显示答案选项
-        printf("\n显示答案? (1=是, 0=否): ");
-        scanf("%d", &choice);
-        if (choice == 1) {
-            int solution_count = 0;
-            copy_grid(grid, solution);
-            solve_sudoku(solution, &solution_count);
-            
-            printf("\n数独答案:\n");
-            print_grid(solution);
-        }
-    }
-    else if (choice == 2) {
-        // 加载谜题
-        char filename[100];
-        printf("输入文件名: ");
-        scanf("%s", filename);
-        load_sudoku(grid, filename);
-        
-        printf("\n加载的数独谜题:\n");
-        print_grid(grid);
-        
-        // 求解选项
-        printf("\n求解数独? (1=是, 0=否): ");
-        scanf("%d", &choice);
-        if (choice == 1) {
-            int solution_count = 0;
-            copy_grid(grid, solution);
-            solve_sudoku(solution, &solution_count);
-            
-            printf("\n数独答案:\n");
-            print_grid(solution);
-        }
-    }
-    else if (choice == 3) {
-        // 手动输入谜题
-        printf("输入9x9数独网格(用空格分隔，0表示空):\n");
-        for (int i = 0; i < N; i++) {
-            for (int j = 0; j < N; j++) {
-                scanf("%d", &grid[i][j]);
-            }
-        }
-        
-        printf("\n输入的数独谜题:\n");
-        print_grid(grid);
-        
-        // 求解
-        int solution_count = 0;
-        copy_grid(grid, solution);
-        if (solve_sudoku(solution, &solution_count)) {
-            if (solution_count == 1) {
-                printf("\n唯一解:\n");
-            } else {
-                printf("\n多个解，显示其中一个:\n");
-            }
-            print_grid(solution);
-        } else {
-            printf("\n无解!\n");
-        }
-    }
-    
-    return 0;
-}*/
-
 

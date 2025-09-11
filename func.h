@@ -33,14 +33,14 @@ typedef int ElemType;
 #define SUDOKU_VAR 729
 #define BOX_SIZE 3
 #define N 9
-#define INIT_NUM_1 15
+#define INIT_NUM_1 13
 #define INIT_NUM_2 18
 #define MAX_GENERATE_1 10
 #define MAX_GENERATE_2 20
 //difficulty
 #define EASY 35
-#define MID 42
-#define HARD 50
+#define MID 40
+#define HARD 45
 /*数据结构*/
 typedef struct literal {
     int value; // 文字的值
@@ -89,6 +89,8 @@ typedef struct{
 	int listsize;
 }SqBack;
 
+extern int board[][N], record[][N], user[][N];
+extern int mode;
 /*Part SqList & SqBack*/
 void InitList(SqList& L);
 void InitBack(SqBack& L);
@@ -149,25 +151,26 @@ int randomNum(int code);
 
 void addUnitClause(CNF &S, int value,LITSHEET * ans);
 bool deleteS_head(CNF &S,LITSHEET * ans);
-bool DFS_board_1(int row, int col, int cnt, CNF &S, int board[N][N],LITSHEET* ans);
-bool generate_1(CNF &S, int board[N][N], LITSHEET* ans);
-bool DFS_board_2(int row, int col, int cnt, CNF &S, int board[N][N],LITSHEET* ans);
-bool generate_2(CNF &S, int board[N][N], LITSHEET* ans);
+bool DFS_board_1(int row, int col, int cnt, CNF &S,/* int board[N][N],*/LITSHEET* ans);
+bool generate_1(CNF &S,/* int board[N][N],*/ LITSHEET* ans);
+bool DFS_board_2(int row, int col, int cnt, CNF &S, /*int board[N][N],*/LITSHEET* ans);
+bool generate_2(CNF &S,/* int board[N][N],*/ LITSHEET* ans);
 
 void recoverCNF(CNF &S, LITSHEET *ans);
 void recoverBoard(int board[N][N]);
-void copyBoard(int board[N][N], int record[N][N]);
-bool dig_holes(int board[N][N], int diff, int mode);
+void copyBoard(int record[N][N], int board[N][N]);
+int dig_holes(/*int board[N][N],*/ int blank/*, int mode*/);
 
-bool fast_check_1(int board[N][N], int x, int y, int n);
-bool fast_check_2(int board[N][N], int x, int y, int n);
+bool fast_check_1(/*int board[N][N],*/ int x, int y, int n);
+bool fast_check_2(/*int board[N][N],*/ int x, int y, int n);
 void showBoard(int board[N][N]);
 void Output_CNF(CNF &S);
 
 /*Part Play*/
-void play(int record[N][N],int board[N][N]);
-
-
+void play();
+bool erroInfo(int i, int j, int k);
+bool gameEnd();
+void showBoardstar();
 
 
 
