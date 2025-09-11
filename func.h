@@ -21,26 +21,29 @@ typedef int ElemType;
 // SqList
 #define LIST_INIT_SIZE 1500
 #define LISTINCREMENT 1000
-#define MEMORY_MAX 8500
+#define MEMORY_MAX 9500
 //ans
-#define MAX_VAR 3200
+#define MAX_VAR 3600
 //SqBack
 #define MAX_BACK 400
 #define BACKINCREMENT 100
 //input
 #define FILE_MAX 30
+//DPLL
+#define ALPHA 0.75
+#define BETA 0.25
 //sudoku (initnum太大有可能导致终盘生成失败)
 #define SUDOKU_VAR 729
 #define BOX_SIZE 3
 #define N 9
-#define INIT_NUM_1 13
+#define INIT_NUM_1 27
 #define INIT_NUM_2 18
 #define MAX_GENERATE_1 10
 #define MAX_GENERATE_2 20
 //difficulty
 #define EASY 35
-#define MID 40
-#define HARD 45
+#define MID 42
+#define HARD 50
 /*数据结构*/
 typedef struct literal {
     int value; // 文字的值
@@ -91,6 +94,11 @@ typedef struct{
 
 extern int board[][N], record[][N], user[][N];
 extern int mode;
+extern int score[]; 
+extern int game_flag;
+extern double jw[];
+extern int style;
+
 /*Part SqList & SqBack*/
 void InitList(SqList& L);
 void InitBack(SqBack& L);
@@ -103,7 +111,7 @@ status BackInsert(SqBack &L, int node);
 
 /*Part DPLL*/
 //void makecopy(CNF &newS, CNF &S);
-int num_trueclau(CNF &S); 
+void clearExtarr();
 void initCNF(CNF &S, int var); 
 void clearCNF(CNF &S,LITSHEET* ans);
 void createClause(CNF &S);
@@ -121,24 +129,35 @@ CLAUSE *existUnitClause(CLAUSE *head);
 bool existEmptyClause(CLAUSE *head); 
 CLAUSE *locatePre(CLAUSE *node,CLAUSE *head); 
 int deleteOneClause(CLAUSE *node, SqList &L, CNF &S, LITSHEET* ans);
-bool deleteOneClause_slt(CLAUSE *Node, SqList &L, CNF &S) ;
+
+bool deleteOneClause_slt_1(CLAUSE *node, SqList &L, CNF &S) ;
+bool deleteOneClause_slt_2(CLAUSE *Node, SqList &L, CNF &S,LITSHEET*ans) ;
+bool deleteOneClause_slt_3(CLAUSE *node, SqList &L, CNF &S,LITSHEET*ans) ;
 
 int deleteClause(SqList &L, CNF &S, LITSHEET* ans, SqBack &back);
-int deleteLit( SqList &L, CNF &S, int value, LITSHEET* ans/*,FILE *test*/);
-status restore_cl( SqList &L, CNF &S);
+int deleteLit(SqList&L, CNF &S, int value, LITSHEET* ans); 
+
+status restore_cl_1(SqList &L, CNF &S);
+status restore_cl_2( SqList &L, CNF &S, LITSHEET *ans);
+status restore_cl_3(SqList &L, CNF &S, LITSHEET*ans);
+
 status restore_lit(SqBack &back, LITSHEET* ans);
 void recover_lit(SqBack &back, LITSHEET* ans);
    
 int choose_lit_1(CNF&S, LITSHEET* ans);
-int choose_lit_2(CNF&S, LITSHEET* ans);
-int choose_lit_jw(CNF&S, LITSHEET* ans);
-int choose_lit_hybrid(CNF&S, LITSHEET* ans);
+void clit_2_init(int num, LITSHEET* ans);
+void clit_jw_init(int num, LITSHEET* ans);
+void clit_hybrid_init(int num, LITSHEET* ans);
+int choose_lit_int(LITSHEET *ans);
+int choose_lit_dou(LITSHEET *ans);
 
-bool DPLL(CNF &S, LITSHEET* ans/*,FILE *test*/);
+bool DPLL_1(CNF &S, LITSHEET* ans);
+bool DPLL_2(CNF &S, LITSHEET* ans);
+bool DPLL_3(CNF &S, LITSHEET* ans);
+
 void check(LITSHEET* ans, int cnt);
 void check(FILE *test,LITSHEET* ans,int cnt);
 status saveOutput(LITSHEET* ans, int cnt, char file[], double used_time);
-
 bool autocheck(CNF &S,LITSHEET* ans);
 
 /*Part Sudoku*/
@@ -165,15 +184,15 @@ bool fast_check_1(/*int board[N][N],*/ int x, int y, int n);
 bool fast_check_2(/*int board[N][N],*/ int x, int y, int n);
 void showBoard(int board[N][N]);
 void Output_CNF(CNF &S);
+bool isStuck(int visit[N][N]);
+void normalize_before_dpll(CNF &S, LITSHEET *ans);
 
 /*Part Play*/
 void play();
 bool erroInfo(int i, int j, int k);
 bool gameEnd();
 void showBoardstar();
-
-
-
-
+int hint(int i,int j);
+status saveSudoku(LITSHEET* ans, CNF &S); 
 
 #endif
