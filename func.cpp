@@ -162,7 +162,7 @@ status BackInsert(SqBack &L, int node)
     return TRUE;
 }
 
-/*DPLL 部分 1-26  */
+/*DPLL 部分 1-27  */
 
 void clearExtarr()
 //1.清零外部数组 
@@ -410,7 +410,7 @@ void fshowCNF(CNF &S)
 }
 
 void showLitsheet(LITSHEET* ans, int range)
-//10.展示文字出现在自己的次数 ，不包含0 
+//10.1展示文字出现在自己的次数 ，不包含0 
 {
 	int cnt;
 	for(int i = 1;i <= range; i++){
@@ -432,7 +432,7 @@ void showLitsheet(LITSHEET* ans, int range)
 }
 
 void showLitans(LITSHEET* ans, int range)
-//10.展示文字当前所赋的值
+//10.2展示文字当前所赋的值
 {
 	int cnt;
 	for(int i = 1;i <= range; i++){
@@ -504,7 +504,7 @@ CLAUSE *locatePre(CLAUSE *node,CLAUSE *head)
 }
 
 int deleteOneClause(CLAUSE *node, SqList &L, CNF &S, LITSHEET* ans) 
-//删除单子句，将指针标记改为true，存真子句地址于数组中，返回单子句中变量的值 
+//15.删除单子句，将指针标记改为true，存真子句地址于数组中，返回单子句中变量的值 
 {
 	if(!node || !node->lit){
 		printf("ERROR! clause DON'T exist,can't delete\n");
@@ -550,7 +550,7 @@ int deleteOneClause(CLAUSE *node, SqList &L, CNF &S, LITSHEET* ans)
 }
 
 bool deleteOneClause_slt_1(CLAUSE *node, SqList &L, CNF &S) 
-//15.1删除真子句，存真子句地址于数组中，不用返回值 
+//16.1删除真子句，存真子句地址于数组中，不用返回值 
 {
 	if(!node || !node->lit ||!node->num){
 		printf("DON'T exist,can't delete\n");
@@ -573,7 +573,7 @@ bool deleteOneClause_slt_1(CLAUSE *node, SqList &L, CNF &S)
 }
 
 bool deleteOneClause_slt_2(CLAUSE *node, SqList &L, CNF &S,LITSHEET*ans) 
-//15.2删除真子句，存真子句地址于数组中，动态更新score 
+//16.2删除真子句，存真子句地址于数组中，动态更新score 
 {
 	if(!node || !node->lit ||!node->num){
 		printf("DON'T exist,can't delete\n");
@@ -606,7 +606,7 @@ bool deleteOneClause_slt_2(CLAUSE *node, SqList &L, CNF &S,LITSHEET*ans)
 }
 
 bool deleteOneClause_slt_3(CLAUSE *node, SqList &L, CNF &S,LITSHEET*ans) 
-//15.3删除真子句，存真子句地址于数组中，动态更新jw
+//16.3删除真子句，存真子句地址于数组中，动态更新jw
 {
 	if(!node || !node->lit ||!node->num){
 		printf("DON'T exist,can't delete\n");
@@ -642,7 +642,7 @@ bool deleteOneClause_slt_3(CLAUSE *node, SqList &L, CNF &S,LITSHEET*ans)
 }
 
 int deleteClause(SqList &L, CNF &S, LITSHEET* ans, SqBack &backtrace)
-//16. 删除所有单子句，并对CNF进行化简；记录操作次数,将单子句中变量值记录 
+//17. 删除所有单子句，并对CNF进行化简；记录操作次数,将单子句中变量值记录 
 {
 	if(S.num_clau == 0 || !S.head){
 		//代表上一步deleteLit后CNF为空，DPLL成功，结束此函数即可
@@ -702,7 +702,7 @@ int deleteClause(SqList &L, CNF &S, LITSHEET* ans, SqBack &backtrace)
 }
 
 int deleteLit(SqList&L, CNF &S, int value, LITSHEET *ans)
-//17.	删除子句中的文字，同时也会删除真子句并记录真子句次数 
+//18.	删除子句中的文字，同时也会删除真子句并记录真子句次数 
 {
 	if(!value) {
 		printf("ERROR! value = 0, cannot delete\n");
@@ -802,23 +802,24 @@ int deleteLit(SqList&L, CNF &S, int value, LITSHEET *ans)
 }
 
 int choose_lit_1(CNF&S, LITSHEET* ans)
-//18.1	选false子句的第一个未定文字 
+//19.1	选false子句的第一个未定文字 
 {
-//	CLAUSE *big = existUnitClause(S.head);
-//	if(big) {
-//		lit = big->lit;
-//		while(lit){
-//			i = lit->value;
-//			if(ans[abs(i)].ans == 0)		return i;
-//			lit = lit->next;
-//		}
-//		printf("ERROR in choose_lit:UnitClause has no lit.\n");	
-//		showClause(big,ans);			
-//		return 0;
-//	}
-	CLAUSE *node = S.head;
+	CLAUSE *big = existUnitClause(S.head);
 	LITERAL *lit = NULL;
-	int i ;
+	int i ;	
+	if(big) {
+		lit = big->lit;
+		while(lit){
+			i = lit->value;
+			if(ans[abs(i)].ans == 0)		return i;
+			lit = lit->next;
+		}
+		printf("ERROR in choose_lit:UnitClause has no lit.\n");	
+		showClause(big,ans);			
+		return 0;
+	}
+	CLAUSE *node = S.head;
+
 	while(node){
 		if(node->isTrue == false && node->num > 0) {
 			lit = node->lit;
@@ -838,7 +839,7 @@ int choose_lit_1(CNF&S, LITSHEET* ans)
 }
 
 void clit_2_init(int num, LITSHEET* ans)
-//18.2	选目前在更多false子句中出现的文字 
+//19.2	选目前在更多false子句中出现的文字 
 {
 	INFO_L *lit = NULL;
 	score[MAX_VAR] = num;
@@ -869,7 +870,7 @@ void clit_2_init(int num, LITSHEET* ans)
 }
 
 void clit_jw_init(int num, LITSHEET* ans)
-// 18.3	Jeroslow-Wang:在还没结果的var中选择子句尽量短的 
+// 19.3	Jeroslow-Wang:在还没结果的var中选择子句尽量短的 
 {
 	jw[MAX_VAR] = (double)num;
 	for(int i = 1; i <= num; ++i){
@@ -894,7 +895,7 @@ void clit_jw_init(int num, LITSHEET* ans)
 }
 
 void clit_hybrid_init(int num, LITSHEET* ans)
-//18.4 将jw和2混合起来，算综合加权评分 
+//19.4 将jw和2混合起来，算综合加权评分 
 {
 	jw[MAX_VAR] = (double)num;
 	
@@ -936,7 +937,7 @@ void clit_hybrid_init(int num, LITSHEET* ans)
 }
 
 int choose_lit_int(LITSHEET *ans)
-//int 选得分最高的 
+//20.1	int 选得分最高的 
 {
 	int max = 0;
 	int record = 0;
@@ -955,7 +956,7 @@ int choose_lit_int(LITSHEET *ans)
 	return record;
 }
 int choose_lit_dou(LITSHEET *ans)
-//double 选得分最高的 
+//20.2	double 选得分最高的 
 {
 	double max = 0.0;
 	int record = 0;
@@ -975,7 +976,7 @@ int choose_lit_dou(LITSHEET *ans)
 }
 
 bool DPLL_1(CNF &S, LITSHEET* ans)
-//19.1	CORE
+//21.1	CORE
 {
 #ifdef CHECK
 	static int depth = 0;
@@ -1090,7 +1091,7 @@ bool DPLL_1(CNF &S, LITSHEET* ans)
 }
 
 bool DPLL_2(CNF &S, LITSHEET* ans)
-//19.2	CORE
+//21.2	CORE
 {
 #ifdef CHECK
 	static int depth = 0;
@@ -1202,7 +1203,7 @@ bool DPLL_2(CNF &S, LITSHEET* ans)
 }
 
 bool DPLL_3(CNF &S, LITSHEET* ans)
-//19.3	CORE
+//21.3	CORE
 {
 #ifdef CHECK
 	static int depth = 0;
@@ -1313,7 +1314,7 @@ bool DPLL_3(CNF &S, LITSHEET* ans)
 }
 
 status restore_cl_1(SqList &L, CNF &S)
-//20.1	恢复若干次子句bool
+//22.1	恢复若干次子句bool
 {
 #ifdef CHECK
 	printf("恢复子句中，DPLL化简后CNF有%d个子句\n",S.num_clau);
@@ -1344,7 +1345,7 @@ status restore_cl_1(SqList &L, CNF &S)
 }
 
 status restore_cl_2(SqList &L, CNF &S, LITSHEET*ans)
-//20.2	恢复若干次子句bool和score 
+//22.2	恢复若干次子句bool和score 
 {
 #ifdef CHECK
 	printf("恢复子句中，DPLL化简后CNF有%d个子句\n",S.num_clau);
@@ -1381,7 +1382,7 @@ status restore_cl_2(SqList &L, CNF &S, LITSHEET*ans)
 }
 
 status restore_cl_3(SqList &L, CNF &S, LITSHEET*ans)
-//20.3	恢复若干次子句bool和jw 
+//22.3	恢复若干次子句bool和jw 
 {
 #ifdef CHECK
 	printf("恢复子句中，DPLL化简后CNF有%d个子句\n",S.num_clau);
@@ -1421,7 +1422,7 @@ status restore_cl_3(SqList &L, CNF &S, LITSHEET*ans)
 }
 
 status restore_lit(SqBack &back, LITSHEET* ans)
-//21.	恢复 变元bool值，子句的文字数，不管子句bool 
+//23.	恢复 变元bool值，子句的文字数，不管子句bool 
 {
 	if(!back.elem){
 		printf("ERROR! back[] is empty!\n");
@@ -1459,7 +1460,7 @@ status restore_lit(SqBack &back, LITSHEET* ans)
 }
 
 void recover_lit(SqBack &back, LITSHEET* ans)
-//22.	将删去的文字数全部加回来,保留原来的ans值 
+//24.	将删去的文字数全部加回来,保留原来的ans值 
 { 
 	if(!back.elem){
 		printf("ERROR! back[] is empty!\n");
@@ -1487,7 +1488,7 @@ void recover_lit(SqBack &back, LITSHEET* ans)
 }
 
 bool autocheck(CNF &S,LITSHEET* ans)
-//23.自动校验求解是否正确
+//25.自动校验求解是否正确
 {
 	CLAUSE *clause = S.head;
 	int value;
@@ -1515,7 +1516,7 @@ bool autocheck(CNF &S,LITSHEET* ans)
 }
 
 void check(LITSHEET *ans, int cnt)
-//24.	输出直观结果 
+//26.1	输出直观结果 
 {
 	for(int i =1; i <= cnt; i++){
 		printf("var %d :",i);
@@ -1527,7 +1528,7 @@ void check(LITSHEET *ans, int cnt)
 }
 
 void check(FILE *fp,LITSHEET *ans,int cnt)
-//25.
+//26.2
 {
 	for(int i =1; i <= cnt; i++){
 		fprintf(fp,"var %d :",i);
@@ -1539,7 +1540,7 @@ void check(FILE *fp,LITSHEET *ans,int cnt)
 }
 
 status saveOutput(LITSHEET* ans, int cnt, char file[], double used_time)
-//26.	按要求保存结果文件 
+//27.	按要求保存结果文件 
 {
 	char output[FILE_MAX];
 	int t;
