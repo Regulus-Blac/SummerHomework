@@ -62,6 +62,7 @@ int main()
             	printf("采用哪一种DPLL方式？\n");
 				scanf("%d",&style)	;
 				
+/*1.false子句第一个	2.按频率选	3.按长度选	4.23结合 */
 				if(style == 1){
 					;//不需要初始化 
 				}else if(style == 2){

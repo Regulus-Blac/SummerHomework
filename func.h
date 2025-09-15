@@ -32,7 +32,7 @@ typedef int ElemType;
 //DPLL
 #define ALPHA 0.75
 #define BETA 0.25
-//sudoku (initnum太大有可能导致终盘生成失败)
+//sudoku
 #define SUDOKU_VAR 729
 #define BOX_SIZE 3
 #define N 9

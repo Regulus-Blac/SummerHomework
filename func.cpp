@@ -2857,5 +2857,3 @@ status saveSudoku(LITSHEET* ans, CNF &S)
 
 	return TRUE;
 }
-
-
